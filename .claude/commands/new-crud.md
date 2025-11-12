@@ -46,7 +46,7 @@ description: 创建完整的CRUD功能（Entity + Mapper + Service + DubboApi）
 - 返回值统一使用 `ResponseResult`
 
 ### 7. DubboApiImpl实现
-- 继承 `BaseDubboApiImpl`
+- 继承 `BaseDubboApi`
 - 添加 `@DubboService` 注解
 - 注入Service
 - 实现接口方法（⚠️ 保持薄层：只负责参数校验、调用Service、返回结果）

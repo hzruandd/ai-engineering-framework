@@ -155,12 +155,12 @@ public class User extends BusinessEntity {
 
 **✅ 正确示例**（薄层）：
 ```java
-import cn.city.parking.common.auth.base.BaseDubboApiImpl;
+import cn.city.parking.common.dubbo.filter.base.BaseDubboApi;
 import cn.city.parking.common.core.web.domain.ResponseResult;
 
 @Slf4j
 @DubboService
-public class UserDubboApiImpl extends BaseDubboApiImpl implements UserDubboApi {
+public class UserDubboApiImpl extends BaseDubboApi implements UserDubboApi {
 
     @Autowired
     private IUserService userService;
@@ -341,7 +341,7 @@ public ResponseResult<Integer> add(@RequestBody User user) {
 - ✅ **适用对象**：Entity、DTO、VO等所有JavaBean对象
 
 **关键规范**：
-- ✅ **DubboApi继承 `cn.city.parking.common.auth.base.BaseDubboApiImpl`**（注意包路径）
+- ✅ **DubboApi继承 `cn.city.parking.common.dubbo.filter.base.BaseDubboApi`**（注意包路径）
 - ✅ **返回值必须用ResponseResult<T>带泛型**
 - ✅ **分页查询必须调用startDubboPage()**
 - ✅ **参数校验（推荐但非强制）**：
@@ -402,7 +402,7 @@ public class CityParkingXxxApplication {
 ### 7. 日志规范
 ```java
 @Slf4j
-public class OrderDubboApiImpl extends BaseDubboApiImpl {
+public class OrderDubboApiImpl extends BaseDubboApi {
 
     @Override
     public ResponseResult<Integer> add(Order order) {
@@ -426,14 +426,14 @@ public class OrderDubboApiImpl extends BaseDubboApiImpl {
 ### 8. 核心类包路径（重要）
 ```java
 // ✅ 正确路径
-import cn.city.parking.common.auth.base.BaseDubboApiImpl;
+import cn.city.parking.common.dubbo.filter.base.BaseDubboApi;
 import cn.city.parking.common.core.web.domain.BusinessEntity;
 import cn.city.parking.common.core.web.domain.ResponseResult;
 import com.github.pagehelper.PageInfo;
 import cn.city.parking.common.redis.RedisUtils;
 
 // ❌ 错误路径
-import cn.city.parking.common.core.web.domain.BaseDubboApiImpl;  // 错误！
+import cn.city.parking.common.auth.base.BaseDubboApi;  // 错误！旧路径已废弃
 ```
 
 ### 9. Redis使用规范
@@ -1175,7 +1175,7 @@ private String remark;
 | 重复添加Redis、Auth、MySQL、Druid依赖 | 只依赖common-server | common-server已包含 |
 | `active: ${profiles.active:dev}` | `active: @profileActive@` | 占位符格式错误 |
 | `server-addr: ${custom-config.server.nacos.address}` | `server-addr: ${nacos.server-addr}` | 占位符路径错误 |
-| `import cn.city.parking.common.core.web.domain.BaseDubboApiImpl;` | `import cn.city.parking.common.auth.base.BaseDubboApiImpl;` | 路径错误 |
+| `import cn.city.parking.common.auth.base.BaseDubboApi;` | `import cn.city.parking.common.dubbo.filter.base.BaseDubboApi;` | 路径错误（旧路径已废弃） |
 | `RedisUtils.deleteKeys("user:*");` | `RedisUtils.batchDeleteObj("user:*");` | 方法不存在 |
 | `User user = RedisUtils.getCacheObject(key);` | `User user = RedisUtils.getCacheObject(key, User.class);` | 需要类型转换 |
 | `ResponseResult getInfo(String id)` | `ResponseResult<User> getInfo(String id)` | 缺少泛型 |
@@ -1218,7 +1218,7 @@ private String remark;
 
 **架构层面**：
 1. **不要创建**：common包、utils包、BusinessException、ResponseResult（已有独立仓库）
-2. **不要使用错误路径**：`cn.city.parking.common.core.web.domain.BaseDubboApiImpl`（✅ 正确：`cn.city.parking.common.auth.base.BaseDubboApiImpl`）
+2. **不要使用错误路径**：`cn.city.parking.common.auth.base.BaseDubboApi`（✅ 正确：`cn.city.parking.common.dubbo.filter.base.BaseDubboApi`）
 3. **不要使用不存在的方法**：`RedisUtils.deleteKeys()`（✅ 正确：`batchDeleteObj()`）
 
 **模块结构**：
@@ -1324,7 +1324,7 @@ private String remark;
 2. API模块创建DubboApi接口（6个标准方法）
 3. Server模块创建Mapper接口（继承BaseMapper）
 4. Server模块创建Service接口（继承IService）和实现（继承ServiceImpl + @Transactional）
-5. Server模块创建DubboApi实现（继承BaseDubboApiImpl + ResponseResult<T> + startDubboPage()）
+5. Server模块创建DubboApi实现（继承BaseDubboApi + ResponseResult<T> + startDubboPage()）
 
 ### 标准方法命名
 **DubboApi**：pageList、allList、getInfo、add、edit、remove

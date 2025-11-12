@@ -191,7 +191,7 @@ public class Order extends BusinessEntity {
 import cn.city.parking.common.core.utils.ValidateUtil;
 
 @DubboService
-public class OrderDubboApiImpl extends BaseDubboApiImpl implements OrderDubboApi {
+public class OrderDubboApiImpl extends BaseDubboApi implements OrderDubboApi {
 
     @Override
     public ResponseResult<Integer> add(Order order) {

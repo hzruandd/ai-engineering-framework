@@ -7,7 +7,7 @@
 ```java
 package cn.city.parking.config.dubbo;
 
-import cn.city.parking.common.auth.base.BaseDubboApiImpl;
+import cn.city.parking.common.dubbo.filter.base.BaseDubboApi;
 import cn.city.parking.common.core.web.domain.ResponseResult;
 import cn.city.parking.common.redis.RedisUtils;
 import cn.city.parking.config.api.ConfigDubboApi;
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @DubboService
-public class ConfigDubboApiImpl extends BaseDubboApiImpl implements ConfigDubboApi {
+public class ConfigDubboApiImpl extends BaseDubboApi implements ConfigDubboApi {
 
     @Autowired
     private ISystemConfigService systemConfigService;

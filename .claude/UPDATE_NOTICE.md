@@ -201,13 +201,13 @@ public class Order extends BusinessEntity {
 ```java
 package cn.city.parking.order.dubbo;
 
-import cn.city.parking.common.auth.base.BaseDubboApiImpl;
+import cn.city.parking.common.dubbo.filter.base.BaseDubboApi;
 import cn.city.parking.common.core.utils.ValidateUtil;
 import cn.city.parking.common.core.web.domain.ResponseResult;
 
 @Slf4j
 @DubboService
-public class OrderDubboApiImpl extends BaseDubboApiImpl implements OrderDubboApi {
+public class OrderDubboApiImpl extends BaseDubboApi implements OrderDubboApi {
 
     @Autowired
     private IOrderService orderService;
@@ -326,7 +326,7 @@ public class OrderController {
 - [ ] **可选：Entity/DTO字段添加校验注解**（@NotBlank、@Size等，如需使用，message必填）
 - [ ] **可选：DubboApi/Controller中使用ValidateUtil.validate()校验**（推荐但非强制）
 - [ ] Service方法添加@Transactional(rollbackFor = Exception.class)
-- [ ] DubboApi继承BaseDubboApiImpl
+- [ ] DubboApi继承BaseDubboApi
 - [ ] 分页查询调用startDubboPage()
 - [ ] 返回值使用ResponseResult<T>带泛型
 - [ ] 关键操作添加日志（log.info）

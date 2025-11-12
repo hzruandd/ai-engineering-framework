@@ -454,7 +454,7 @@ public void processAsync() {
 import cn.city.parking.common.core.annotation.NoRepeatSubmit;
 
 @DubboService
-public class OrderDubboApiImpl extends BaseDubboApiImpl implements OrderDubboApi {
+public class OrderDubboApiImpl extends BaseDubboApi implements OrderDubboApi {
 
     // ✅ 5秒内禁止重复提交（基于用户ID + 接口路径）
     @NoRepeatSubmit(interval = 5000, message = "请勿重复提交")

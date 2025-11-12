@@ -77,7 +77,9 @@
 // 实体基类和返回值（注意：web.domain，不是domain）
 import cn.city.parking.common.core.web.domain.BusinessEntity;
 import cn.city.parking.common.core.web.domain.ResponseResult;
-import cn.city.parking.common.core.web.domain.BaseDubboApiImpl;
+
+// DubboApi基类
+import cn.city.parking.common.dubbo.filter.base.BaseDubboApi;
 
 // 分页对象（pagehelper库）
 import com.github.pagehelper.PageInfo;
@@ -86,7 +88,7 @@ import com.github.pagehelper.PageInfo;
 ### DubboApi实现三要点
 ```java
 @DubboService
-public class XxxDubboApiImpl extends BaseDubboApiImpl implements XxxDubboApi {
+public class XxxDubboApiImpl extends BaseDubboApi implements XxxDubboApi {
 
     @Override
     public ResponseResult<User> getInfo(String id) {

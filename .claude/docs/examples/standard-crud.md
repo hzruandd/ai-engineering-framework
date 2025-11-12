@@ -178,7 +178,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 ```java
 package cn.city.parking.user.dubbo;
 
-import cn.city.parking.common.auth.base.BaseDubboApiImpl;
+import cn.city.parking.common.dubbo.filter.base.BaseDubboApi;
 import cn.city.parking.common.core.utils.ValidateUtil;
 import cn.city.parking.common.core.web.domain.ResponseResult;
 import cn.city.parking.user.api.UserDubboApi;
@@ -195,7 +195,7 @@ import java.util.List;
 
 @Slf4j
 @DubboService
-public class UserDubboApiImpl extends BaseDubboApiImpl implements UserDubboApi {
+public class UserDubboApiImpl extends BaseDubboApi implements UserDubboApi {
 
     @Autowired
     private IUserService userService;
@@ -270,7 +270,7 @@ public class UserDubboApiImpl extends BaseDubboApiImpl implements UserDubboApi {
 - ✅ **DubboApi 返回值**：使用 ResponseResult<T> 带泛型
 - ✅ **Service 继承**：接口继承 IService<T>，实现类继承 ServiceImpl
 - ✅ **事务管理**：增删改方法必须添加 @Transactional(rollbackFor = Exception.class)
-- ✅ **DubboApi 实现**：继承 BaseDubboApiImpl
+- ✅ **DubboApi 实现**：继承 BaseDubboApi
 - ✅ **分页查询**：调用 startDubboPage()
 - ✅ **日志记录**：关键操作添加日志记录
 
