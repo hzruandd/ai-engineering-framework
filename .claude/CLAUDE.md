@@ -1348,6 +1348,8 @@ private String remark;
 - `/add-field` - 为实体类添加新字段
 - `/new-api` - 在已有模块添加新接口
 - `/fix-cache` - 修复缓存问题
+- `/diff-report` - 生成代码修改报告（提交前自查）
+- `/generate-tests` - 生成单元测试代码
 - `/review-code` - 代码审查清单
 
 ---
