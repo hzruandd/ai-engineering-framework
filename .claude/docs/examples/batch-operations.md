@@ -1,0 +1,67 @@
+# 案例3：批量操作与事务
+
+**场景**：批量导入用户，需要保证事务一致性
+
+## 完整代码
+
+```java
+package cn.city.parking.user.service.impl;
+
+import cn.city.parking.common.core.exception.BusinessException;
+import cn.city.parking.user.api.entity.User;
+import cn.city.parking.user.mapper.UserMapper;
+import cn.city.parking.user.service.IUserService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Slf4j
+@Service
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
+
+    /**
+     * 批量导入用户
+     *
+     * @param users 用户列表
+     * @return 成功导入数量
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)  // ✅ 批量操作必须加事务
+    public int batchImportUsers(List<User> users) {
+        log.info("开始批量导入用户，数量：{}", users.size());
+
+        int successCount = 0;
+
+        for (User user : users) {
+            // 校验手机号是否已存在
+            Long count = baseMapper.selectCount(
+                new LambdaQueryWrapper<User>().eq(User::getPhone, user.getPhone())
+            );
+
+            if (count > 0) {
+                // ✅ 抛出业务异常，触发事务回滚
+                throw new BusinessException("手机号已存在：" + user.getPhone());
+            }
+
+            // 插入用户
+            baseMapper.insert(user);
+            successCount++;
+        }
+
+        log.info("批量导入用户完成，成功数量：{}", successCount);
+        return successCount;
+    }
+}
+```
+
+## 关键点说明
+
+**事务要点**：
+- ✅ 批量操作必须加 `@Transactional(rollbackFor = Exception.class)`
+- ✅ 抛出异常会自动回滚事务
+- ✅ 不要在方法内捕获异常，让它向上抛出
+- ❌ 不要在DubboApi层加事务（事务应该在Service层）

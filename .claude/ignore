@@ -1,0 +1,50 @@
+# Claude Code ignore file
+# 配置在代码搜索、文件读取等操作中需要忽略的文件和目录
+
+# 依赖目录
+**/node_modules/
+**/target/
+**/build/
+**/.gradle/
+**/out/
+**/dist/
+
+# IDE配置
+**/.idea/
+**/.vscode/
+**/.eclipse/
+**/.settings/
+*.iml
+*.ipr
+*.iws
+
+# 日志文件
+**/*.log
+**/logs/
+
+# 临时文件
+**/*.tmp
+**/*.temp
+**/*.swp
+**/*.bak
+**/.DS_Store
+
+# 编译文件
+**/*.class
+**/*.jar
+**/*.war
+
+# 大文件
+**/*.zip
+**/*.tar
+**/*.gz
+**/*.7z
+**/*.rar
+
+# 数据库文件
+**/*.db
+**/*.sqlite
+
+# 文档（如果不需要搜索）
+# **/docs/
+# **/*.pdf
