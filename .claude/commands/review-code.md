@@ -928,6 +928,550 @@ public void processWithLock(String orderId) {
 - [ ] 状态机控制状态流转
 - [ ] 记录处理记录表
 
+### 3.5 敏感功能异常告警规范 ✅
+
+**核心原则**：涉及用户资金或权益的敏感功能，所有异常必须发送告警通知，确保及时发现和处理问题。
+
+#### 3.5.1 敏感功能定义 ✅
+
+**资金交易类**：
+- [ ] 支付（微信支付、支付宝支付、银行卡支付）
+- [ ] 退款（全额退款、部分退款）
+- [ ] 提现（用户提现、商户提现）
+- [ ] 充值（账户充值、余额充值）
+- [ ] 转账（账户间转账、红包）
+
+**权益开通类**：
+- [ ] 开卡（停车卡、会员卡）
+- [ ] 开月租（月租车位、月租套餐）
+- [ ] 购买优惠券（代金券、折扣券）
+- [ ] 购买套餐（停车套餐、服务套餐）
+- [ ] 会员升级（普通会员→VIP）
+
+**订单处理类**：
+- [ ] 订单创建（支付订单、服务订单）
+- [ ] 订单取消（已支付订单取消）
+- [ ] 订单退款（订单退款处理）
+- [ ] 订单状态变更（待支付→已支付→已完成）
+
+**账户变动类**：
+- [ ] 余额变更（增加、扣减）
+- [ ] 积分变更（赠送、消费、过期）
+- [ ] 会员权益变更（权益开通、权益失效）
+- [ ] 优惠券变更（发放、使用、作废）
+
+**核销类**：
+- [ ] 优惠券核销
+- [ ] 停车券核销
+- [ ] 权益核销（会员权益使用）
+- [ ] 套餐核销（套餐次数扣减）
+
+#### 3.5.2 告警级别与渠道 ✅
+
+**P0级别（紧急）- 影响所有用户或导致资金损失**：
+- **触发条件**：
+  - 支付网关宕机（持续5分钟以上）
+  - 批量退款失败（连续10笔以上）
+  - 数据库死锁导致交易无法进行
+  - 分布式事务异常（支付成功但订单创建失败）
+- **告警渠道**：短信 + 企业微信 + 电话
+- **响应时间**：立即处理（5分钟内）
+
+**P1级别（重要）- 影响部分用户或单笔交易**：
+- **触发条件**：
+  - 单笔支付失败
+  - 单笔退款失败
+  - 第三方接口超时（单次）
+  - 账户余额不一致
+  - 订单状态异常
+- **告警渠道**：企业微信 + 钉钉
+- **响应时间**：30分钟内处理
+
+**P2级别（一般）- 业务异常但不影响资金**：
+- **触发条件**：
+  - 用户余额不足（正常业务逻辑）
+  - 优惠券已使用
+  - 参数校验失败
+  - 并发冲突（乐观锁失败，单次）
+- **告警渠道**：仅记录日志，不发送告警
+- **响应时间**：日常监控
+
+#### 3.5.3 必须告警的场景 ✅
+
+**场景1：支付/退款异常**：
+- [ ] 支付成功但订单创建失败（P0）
+- [ ] 退款失败（P1）
+- [ ] 重复扣款（P0）
+- [ ] 支付金额与订单金额不一致（P0）
+- [ ] 第三方支付接口异常（P1）
+
+**场景2：数据一致性异常**：
+- [ ] 账户余额与流水不一致（P0）
+- [ ] 订单状态与支付状态不一致（P0）
+- [ ] 库存数据不一致（P1）
+- [ ] 优惠券状态异常（P1）
+
+**场景3：第三方服务异常**：
+- [ ] 支付网关超时（P1）
+- [ ] 银行接口返回失败（P1）
+- [ ] 微信/支付宝回调失败（P1）
+- [ ] 短信发送失败（P2，涉及验证码则P1）
+
+**场景4：分布式事务异常**：
+- [ ] 本地事务提交失败（P0）
+- [ ] 补偿事务执行失败（P0）
+- [ ] TCC事务超时（P1）
+- [ ] 消息队列消费失败（P1）
+
+**场景5：并发冲突超过阈值**：
+- [ ] 1分钟内乐观锁冲突超过10次（P1）
+- [ ] 1分钟内库存不足超过50次（P1）
+- [ ] 疑似刷单行为（同一用户短时间内大量操作）（P0）
+
+#### 3.5.4 告警内容要求 ✅
+
+**必须包含的信息**：
+- [ ] **异常时间**：`2025-11-13 14:30:25`
+- [ ] **异常类型**：`支付失败`、`退款异常`、`数据不一致`
+- [ ] **业务参数**：
+  - 订单号（`orderId`）
+  - 用户ID（`userId`）
+  - 金额（`amount`）
+  - 支付方式（`payType`）
+- [ ] **异常信息**：
+  - 异常类名
+  - 异常消息
+  - 关键堆栈（前3层）
+- [ ] **影响范围**：影响用户数、影响金额
+- [ ] **处理建议**：如"请立即检查支付网关"、"需要人工退款"
+
+**告警消息格式**：
+```
+【P1告警】支付异常
+时间：2025-11-13 14:30:25
+类型：微信支付失败
+订单号：ORDER202511130001
+用户ID：USER123456
+金额：198.00元
+异常：WeChatPayException: 支付网关超时
+影响：1笔订单，1个用户
+建议：查询支付结果，如未支付成功则关闭订单
+```
+
+#### 3.5.5 代码示例 ✅
+
+**示例1：支付异常告警**
+
+```java
+// ❌ 错误：敏感功能异常未告警
+@Service
+public class PaymentService {
+
+    @Transactional(rollbackFor = Exception.class)
+    public PaymentResult processPayment(PaymentRequest request) {
+        try {
+            // 调用支付网关
+            PaymentResult result = paymentGateway.pay(request);
+
+            if (!result.isSuccess()) {
+                // 仅记录日志，未告警！
+                log.error("支付失败，订单号：{}", request.getOrderId());
+                throw new BusinessException("支付失败");
+            }
+
+            return result;
+        } catch (Exception e) {
+            // 仅记录日志，未告警！
+            log.error("支付异常", e);
+            throw new BusinessException("支付处理异常", e);
+        }
+    }
+}
+
+// ✅ 正确：敏感功能异常必须告警
+@Service
+public class PaymentService {
+
+    @Autowired
+    private AlarmService alarmService;  // 告警服务
+
+    @Transactional(rollbackFor = Exception.class)
+    public PaymentResult processPayment(PaymentRequest request) {
+        try {
+            // 调用支付网关
+            PaymentResult result = paymentGateway.pay(request);
+
+            if (!result.isSuccess()) {
+                // 记录日志
+                log.error("支付失败，订单号：{}，原因：{}",
+                    request.getOrderId(), result.getFailReason());
+
+                // 发送P1告警
+                alarmService.sendAlarm(
+                    AlarmLevel.P1,
+                    AlarmType.PAYMENT_FAILED,
+                    "支付失败",
+                    Dict.create()
+                        .set("orderId", request.getOrderId())
+                        .set("userId", request.getUserId())
+                        .set("amount", request.getAmount())
+                        .set("payType", request.getPayType())
+                        .set("reason", result.getFailReason())
+                );
+
+                throw new BusinessException("支付失败");
+            }
+
+            return result;
+        } catch (PaymentException e) {
+            // 记录日志（包含堆栈）
+            log.error("支付异常，订单号：{}", request.getOrderId(), e);
+
+            // 发送P0告警（支付异常比失败更严重）
+            alarmService.sendAlarm(
+                AlarmLevel.P0,
+                AlarmType.PAYMENT_ERROR,
+                "支付异常",
+                Dict.create()
+                    .set("orderId", request.getOrderId())
+                    .set("userId", request.getUserId())
+                    .set("amount", request.getAmount())
+                    .set("exception", e.getClass().getName())
+                    .set("message", e.getMessage())
+            );
+
+            throw new BusinessException("支付处理异常", e);
+        }
+    }
+}
+```
+
+**示例2：退款异常告警**
+
+```java
+// ✅ 正确示例
+@Service
+public class RefundService {
+
+    @Autowired
+    private AlarmService alarmService;
+
+    @Transactional(rollbackFor = Exception.class)
+    public void processRefund(String orderId, BigDecimal amount) {
+        try {
+            // 调用退款接口
+            RefundResult result = refundGateway.refund(orderId, amount);
+
+            if (!result.isSuccess()) {
+                log.error("退款失败，订单号：{}，金额：{}，原因：{}",
+                    orderId, amount, result.getFailReason());
+
+                // P1告警：退款失败
+                alarmService.sendAlarm(
+                    AlarmLevel.P1,
+                    AlarmType.REFUND_FAILED,
+                    "退款失败",
+                    Dict.create()
+                        .set("orderId", orderId)
+                        .set("amount", amount)
+                        .set("reason", result.getFailReason())
+                );
+
+                throw new BusinessException("退款失败，请稍后重试");
+            }
+
+            log.info("退款成功，订单号：{}，金额：{}", orderId, amount);
+
+        } catch (Exception e) {
+            log.error("退款异常，订单号：{}，金额：{}", orderId, amount, e);
+
+            // P0告警：退款异常（需要人工介入）
+            alarmService.sendAlarm(
+                AlarmLevel.P0,
+                AlarmType.REFUND_ERROR,
+                "退款异常",
+                Dict.create()
+                    .set("orderId", orderId)
+                    .set("amount", amount)
+                    .set("exception", e.getMessage())
+            );
+
+            throw new BusinessException("退款处理异常", e);
+        }
+    }
+}
+```
+
+**示例3：数据一致性检查告警**
+
+```java
+// ✅ 定时任务检查数据一致性
+@Service
+public class DataConsistencyCheckService {
+
+    @Autowired
+    private AlarmService alarmService;
+
+    @Scheduled(cron = "0 */10 * * * ?")  // 每10分钟执行一次
+    public void checkAccountBalance() {
+        try {
+            // 查询所有账户
+            List<Account> accounts = accountMapper.selectAll();
+
+            for (Account account : accounts) {
+                // 计算账户余额（根据流水）
+                BigDecimal calculatedBalance = accountFlowMapper.sumByUserId(account.getUserId());
+
+                // 对比账户余额
+                if (calculatedBalance.compareTo(account.getBalance()) != 0) {
+                    log.error("账户余额不一致，用户ID：{}，账户余额：{}，计算余额：{}",
+                        account.getUserId(), account.getBalance(), calculatedBalance);
+
+                    // P0告警：数据不一致
+                    alarmService.sendAlarm(
+                        AlarmLevel.P0,
+                        AlarmType.DATA_INCONSISTENT,
+                        "账户余额不一致",
+                        Dict.create()
+                            .set("userId", account.getUserId())
+                            .set("accountBalance", account.getBalance())
+                            .set("calculatedBalance", calculatedBalance)
+                            .set("diff", account.getBalance().subtract(calculatedBalance))
+                    );
+                }
+            }
+        } catch (Exception e) {
+            log.error("数据一致性检查异常", e);
+
+            alarmService.sendAlarm(
+                AlarmLevel.P1,
+                AlarmType.SYSTEM_ERROR,
+                "数据一致性检查异常",
+                Dict.create().set("exception", e.getMessage())
+            );
+        }
+    }
+}
+```
+
+**示例4：并发冲突监控告警**
+
+```java
+// ✅ 监控并发冲突，超过阈值告警
+@Service
+public class OrderService {
+
+    @Autowired
+    private AlarmService alarmService;
+
+    // 使用AtomicLong统计失败次数
+    private final AtomicLong optimisticLockFailCount = new AtomicLong(0);
+
+    @Scheduled(cron = "0 * * * * ?")  // 每分钟检查一次
+    public void checkOptimisticLockFail() {
+        long failCount = optimisticLockFailCount.getAndSet(0);
+
+        // 阈值：1分钟内失败超过10次
+        if (failCount > 10) {
+            log.warn("乐观锁冲突频繁，1分钟内失败{}次", failCount);
+
+            // P1告警
+            alarmService.sendAlarm(
+                AlarmLevel.P1,
+                AlarmType.CONCURRENT_CONFLICT,
+                "乐观锁冲突频繁",
+                Dict.create()
+                    .set("failCount", failCount)
+                    .set("threshold", 10)
+                    .set("suggestion", "检查是否存在热点数据或高并发场景")
+            );
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void updateOrder(Order order) {
+        try {
+            int rows = orderMapper.updateById(order);
+            if (rows == 0) {
+                // 乐观锁冲突
+                optimisticLockFailCount.incrementAndGet();
+                throw new BusinessException("订单已被修改，请重试");
+            }
+        } catch (Exception e) {
+            log.error("更新订单失败", e);
+            throw e;
+        }
+    }
+}
+```
+
+#### 3.5.6 告警工具类规范 ✅
+
+**推荐实现**：
+
+```java
+/**
+ * 告警服务接口
+ */
+public interface AlarmService {
+
+    /**
+     * 发送告警
+     *
+     * @param level 告警级别
+     * @param type 告警类型
+     * @param title 告警标题
+     * @param context 上下文信息
+     */
+    void sendAlarm(AlarmLevel level, AlarmType type, String title, Dict context);
+}
+
+/**
+ * 告警级别
+ */
+public enum AlarmLevel {
+    P0("紧急", "短信+企业微信+电话"),
+    P1("重要", "企业微信+钉钉"),
+    P2("一般", "仅日志");
+
+    private final String name;
+    private final String channel;
+}
+
+/**
+ * 告警类型
+ */
+public enum AlarmType {
+    PAYMENT_FAILED("支付失败"),
+    PAYMENT_ERROR("支付异常"),
+    REFUND_FAILED("退款失败"),
+    REFUND_ERROR("退款异常"),
+    DATA_INCONSISTENT("数据不一致"),
+    CONCURRENT_CONFLICT("并发冲突"),
+    SYSTEM_ERROR("系统错误");
+
+    private final String description;
+}
+```
+
+**告警去重机制**：
+
+```java
+@Service
+public class AlarmServiceImpl implements AlarmService {
+
+    @Autowired
+    private RedisUtils redisUtils;
+
+    @Autowired
+    private WeChatRobotService weChatRobotService;
+
+    @Override
+    public void sendAlarm(AlarmLevel level, AlarmType type, String title, Dict context) {
+        // 生成告警唯一键
+        String alarmKey = buildAlarmKey(level, type, context);
+
+        // 检查是否重复告警（5分钟内相同告警只发送一次）
+        String lockKey = "alarm:lock:" + alarmKey;
+        if (redisUtils.hasKey(lockKey)) {
+            log.info("告警去重，5分钟内已发送，跳过本次告警：{}", title);
+            return;
+        }
+
+        // 构建告警消息
+        String message = buildAlarmMessage(level, type, title, context);
+
+        // 根据告警级别选择渠道
+        if (level == AlarmLevel.P0) {
+            // P0：短信 + 企业微信
+            sendSms(message);
+            weChatRobotService.sendMessage(message);
+        } else if (level == AlarmLevel.P1) {
+            // P1：企业微信
+            weChatRobotService.sendMessage(message);
+        } else {
+            // P2：仅记录日志
+            log.warn("告警：{}", message);
+        }
+
+        // 记录告警历史
+        saveAlarmHistory(level, type, title, context, message);
+
+        // 设置去重锁（5分钟）
+        redisUtils.setCacheObject(lockKey, "1", 300);
+    }
+
+    private String buildAlarmKey(AlarmLevel level, AlarmType type, Dict context) {
+        // 根据告警类型和关键参数生成唯一键
+        String orderId = context.getStr("orderId", "");
+        String userId = context.getStr("userId", "");
+        return level + ":" + type + ":" + orderId + ":" + userId;
+    }
+
+    private String buildAlarmMessage(AlarmLevel level, AlarmType type, String title, Dict context) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("【").append(level.getName()).append("告警】").append(title).append("\n");
+        sb.append("时间：").append(DateUtil.now()).append("\n");
+        sb.append("类型：").append(type.getDescription()).append("\n");
+
+        // 添加业务参数
+        if (context.containsKey("orderId")) {
+            sb.append("订单号：").append(context.getStr("orderId")).append("\n");
+        }
+        if (context.containsKey("userId")) {
+            sb.append("用户ID：").append(context.getStr("userId")).append("\n");
+        }
+        if (context.containsKey("amount")) {
+            sb.append("金额：").append(context.getStr("amount")).append("元\n");
+        }
+
+        // 添加异常信息
+        if (context.containsKey("exception")) {
+            sb.append("异常：").append(context.getStr("exception")).append("\n");
+        }
+        if (context.containsKey("reason")) {
+            sb.append("原因：").append(context.getStr("reason")).append("\n");
+        }
+
+        // 添加处理建议
+        if (context.containsKey("suggestion")) {
+            sb.append("建议：").append(context.getStr("suggestion")).append("\n");
+        }
+
+        return sb.toString();
+    }
+}
+```
+
+#### 3.5.7 检查清单 ✅
+
+**敏感功能识别**：
+- [ ] 方法名包含：`pay`、`refund`、`withdraw`、`recharge`、`purchase`、`order`、`card`等关键词
+- [ ] 涉及金额计算的方法（`BigDecimal` 类型参数）
+- [ ] 涉及账户余额变更的方法
+- [ ] 调用第三方支付接口的方法
+- [ ] 涉及用户权益开通/变更的方法
+
+**告警代码检查**：
+- [ ] ❌ 敏感功能的catch块中是否添加了告警代码
+- [ ] ❌ 告警级别是否合理（P0/P1/P2）
+- [ ] ❌ 告警内容是否包含关键信息（订单号、用户ID、金额）
+- [ ] ❌ 是否记录了完整的异常堆栈
+- [ ] ❌ 是否有告警去重机制（避免告警风暴）
+- [ ] ❌ 是否有告警抑制策略（非工作时间P2级别延迟）
+
+**告警测试验证**：
+- [ ] 模拟异常场景，验证告警是否正常发送
+- [ ] 检查告警消息格式是否规范
+- [ ] 检查告警去重是否生效
+- [ ] 检查告警渠道是否正确（P0/P1/P2）
+
+**监控与优化**：
+- [ ] 是否统计告警数据（按类型、级别、时间）
+- [ ] 是否定期review告警记录，优化告警策略
+- [ ] 是否有告警响应时长统计
+- [ ] 是否有误报率统计（误报率应<5%）
+
 ---
 
 ## 四、设计原则检查（SOLID）
@@ -1272,5 +1816,5 @@ public class PaymentService {
 
 ---
 
-**最后更新**：2025-11-13
+**最后更新**：2025-11-14
 **适用版本**：City Parking 2.0.0-SNAPSHOT
