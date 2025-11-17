@@ -1816,5 +1816,5 @@ public class PaymentService {
 
 ---
 
-**最后更新**：2025-11-14
+**最后更新**：2025-11-13
 **适用版本**：City Parking 2.0.0-SNAPSHOT

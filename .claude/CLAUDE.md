@@ -46,7 +46,7 @@
 ## 项目概述
 
 ### 技术栈
-- **Spring Boot**: 2.7.18 | **Spring Cloud Alibaba**: 2021.0.5.0
+- **Spring Boot**: 2.7.18 | **Spring Cloud Alibaba**: 2021.1
 - **Dubbo**: 3.3.2（RPC框架，服务间通信）
 - **Nacos**: 2.1.1（注册中心 + 配置中心）
 - **MyBatis Plus**: 3.5.7 | **Redis**: Lettuce | **MySQL**: 8.0+
@@ -844,11 +844,17 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
 
 ### POM配置
 
-**⚠️ 关键架构说明**：
-- 根pom（city-parking-xxx/pom.xml）只是**聚合器**，用于本地开发便利
-- 根pom **不会发布到Maven私库**（配置deploy skip）
-- API和Server模块**直接继承city-parking-parent**，不继承根pom
-- 只有API模块会发布到Maven私库
+**⚠️ 关键架构说明（独立仓库设计）**：
+- **city-parking-parent**：独立仓库，**必须发布到Maven私库**，所有微服务都依赖它
+- **city-parking-common-xxx**：独立仓库，发布到Maven私库，提供通用组件
+- **微服务项目（如city-parking-eop）**：独立仓库，包含：
+  - 根pom（city-parking-xxx/pom.xml）：仅作为**聚合器**，用于本地开发，**不发布到Maven私库**
+  - API模块：直接继承city-parking-parent（从Maven私库获取），发布到Maven私库
+  - Server模块：直接继承city-parking-parent，不发布到Maven私库
+
+**发布策略**：
+- ✅ **发布到Maven私库**：city-parking-parent、city-parking-common-xxx、微服务的API模块
+- ❌ **不发布到Maven私库**：微服务的根pom（聚合器）、微服务的Server模块
 
 **根POM（city-parking-xxx/pom.xml）**：
 ```xml
@@ -1013,11 +1019,17 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
 </project>
 ```
 
-**⚠️ 为什么API和Server不继承根pom？**
-1. 根pom不会发布到Maven私库
+**⚠️ 为什么API和Server不继承根pom（聚合器）？**
+1. 微服务的根pom（聚合器）不会发布到Maven私库
 2. 如果API继承根pom，其他项目引用API时会找不到根pom（因为根pom未发布）
 3. city-parking-parent已经配置了所有必要的依赖管理和Maven私库地址
 4. 根pom只是一个聚合器，方便本地多模块开发
+
+**⚠️ city-parking-parent的发布策略**：
+- ✅ **city-parking-parent必须发布到Maven私库**（不配置deploy skip）
+- ✅ 所有微服务都是独立仓库，通过Maven依赖引用city-parking-parent
+- ✅ city-parking-parent提供统一的版本管理、依赖管理、插件配置
+- ✅ 发布命令：`mvn clean deploy -P prod`（发布到生产私库）
 
 ### 配置文件
 
