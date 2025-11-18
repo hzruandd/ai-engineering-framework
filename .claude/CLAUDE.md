@@ -33,6 +33,7 @@
 
 | 场景 | 文档 |
 |------|------|
+| **Common组件** | [29个通用组件详解（架构、依赖、使用）](docs/architecture/common-components-architecture.md) |
 | **框架功能** | [框架已自动配置的10大功能](docs/guides/framework-features.md) |
 | **异步任务** | [线程池选择、@Async、MDC传递](docs/guides/detailed-standards.md#1-异步任务使用规范) |
 | **幂等性** | [@NoRepeatSubmit、业务唯一键、分布式锁](docs/guides/detailed-standards.md#2-api幂等性规范) |
