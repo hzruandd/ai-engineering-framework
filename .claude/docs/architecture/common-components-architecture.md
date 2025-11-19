@@ -1571,7 +1571,7 @@ locker.lock("stock:deduct:" + productId, 10, () -> {
 
 ## 🔗 相关文档
 
-- [City Parking 2.0架构分析报告](../../city-parking_架构分析报告_2025-11-17.md)
+- [City Parking 2.0架构分析报告](../city-parking_架构分析报告_2025-11-17.md)
 - [CLAUDE.md编码规范](../../CLAUDE.md)
 
 ---
