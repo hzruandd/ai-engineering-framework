@@ -175,14 +175,34 @@ class SlowQueryAnalyzer:
     def _identify_columns(self):
         """识别Excel中的关键列"""
         for col in self.df.columns:
-            col_lower = str(col).lower()
-            if 'sql' in col_lower or 'query' in col_lower or 'stmt' in col_lower:
-                self.sql_column = col
-            if 'time' in col_lower and 'stamp' not in col_lower:
-                if self.time_column is None:
+            col_str = str(col)
+            col_lower = col_str.lower()
+
+            # SQL列识别（支持中英文）
+            if self.sql_column is None:
+                if any(kw in col_lower for kw in ['sql', 'query', 'stmt']):
+                    self.sql_column = col
+                elif any(kw in col_str for kw in ['SQL语句', 'SQL', '语句', '查询语句']):
+                    self.sql_column = col
+
+            # 耗时列识别（支持中英文）
+            # 注意：要区分"耗时"和"时间"，"耗时"是查询耗时，"时间"是执行时间戳
+            if self.time_column is None:
+                if col_str in ['耗时', '查询耗时', '执行耗时', '耗时(ms)', '耗时（ms）']:
                     self.time_column = col
-            if 'timestamp' in col_lower or 'date' in col_lower:
-                self.timestamp_column = col
+                elif 'duration' in col_lower or 'elapsed' in col_lower:
+                    self.time_column = col
+                elif 'query_time' in col_lower or 'querytime' in col_lower:
+                    self.time_column = col
+
+            # 时间戳列识别（支持中英文）
+            if self.timestamp_column is None:
+                if col_str in ['时间', '执行时间', '查询时间', '开始时间']:
+                    self.timestamp_column = col
+                elif 'timestamp' in col_lower or 'datetime' in col_lower:
+                    self.timestamp_column = col
+                elif col_lower == 'date' or col_lower == 'time':
+                    self.timestamp_column = col
 
         self.log(f"\n识别的列:")
         self.log(f"  SQL列: {self.sql_column}")
