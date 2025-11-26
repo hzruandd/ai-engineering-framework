@@ -773,7 +773,109 @@ public class OrderService {
 
 ## 三、核心框架规范
 
-### 3.0 DubboApi/Controller职责边界 ✅
+### 3.0 线程池使用规范 ✅
+
+**MDC传递与清理**（防止traceId残留）：
+- [ ] ❌ **禁止使用 `Executors.newFixedThreadPool()` 等方法直接创建线程池**
+- [ ] ❌ **禁止使用 `new ThreadPoolExecutor()` 创建线程池（除非在ThreadPoolFactory内部）**
+- [ ] ❌ **禁止使用 `new ThreadPoolTaskExecutor()` 创建线程池（Spring方式也需要TTL包装）**
+- [ ] ✅ **必须使用 `ThreadPoolFactory.newFixedThreadPool()` 创建线程池**
+- [ ] ✅ **或者使用 `ThreadPoolFactory.newSpringThreadPool()` （@Bean方式）**
+- [ ] ✅ **或者使用 `@Async` 注解（框架自动支持MDC）**
+- [ ] ✅ **或者使用注入的 `@Qualifier("ttlExecutorService")` 线程池**
+- [ ] ✅ **如果使用@Bean创建ThreadPoolTaskExecutor，必须用TtlExecutors包装后返回ExecutorService**
+
+**违规示例识别**：
+```java
+// ❌ 错误1：直接使用 Executors（MDC无法传递，会残留）
+@Service
+public class OrderService {
+    private ExecutorService pool = Executors.newFixedThreadPool(10);  // ❌ 禁止
+}
+
+// ❌ 错误2：直接new ThreadPoolExecutor（MDC无法传递）
+@Service
+public class OrderService {
+    private ExecutorService pool = new ThreadPoolExecutor(10, 20, ...);  // ❌ 禁止
+}
+
+// ❌ 错误3：@Bean方式创建ThreadPoolTaskExecutor，但没有TTL包装
+@Configuration
+public class ThreadPoolConfig {
+    @Bean("myPool")
+    public ThreadPoolTaskExecutor myPool() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();  // ❌ 直接new
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(20);
+        executor.setThreadNamePrefix("my-pool-");
+        executor.initialize();
+        return executor;  // ❌ 直接返回ThreadPoolTaskExecutor，没有TTL包装
+    }
+}
+
+// ✅ 正确1：使用ThreadPoolFactory（直接创建）
+@Service
+public class OrderService {
+    private ExecutorService pool = ThreadPoolFactory.newFixedThreadPool(10, "order-pool-");
+}
+
+// ✅ 正确2：使用ThreadPoolFactory.newSpringThreadPool（@Bean方式，推荐）
+@Configuration
+public class ThreadPoolConfig {
+    @Bean("orderPool")
+    public ExecutorService orderPool() {
+        // ✅ 直接返回已TTL包装的ExecutorService
+        return ThreadPoolFactory.newSpringThreadPool(10, 20, 100, 60, "order-");
+    }
+}
+
+// ✅ 正确3：@Bean方式手动TTL包装（如果必须使用ThreadPoolTaskExecutor）
+@Configuration
+public class ThreadPoolConfig {
+    @Bean("myPool")
+    public ExecutorService myPool() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(20);
+        executor.setThreadNamePrefix("my-pool-");
+        executor.initialize();
+
+        // ✅ 关键：必须用TTL包装后返回ExecutorService
+        return TtlExecutors.getTtlExecutorService(executor.getThreadPoolExecutor());
+    }
+}
+
+// ✅ 正确4：使用@Async
+@Service
+public class OrderService {
+    @Async  // 框架自动支持MDC传递
+    public void asyncMethod() {
+        log.info("traceId={}", MDCTraceUtils.getTraceId());  // ✅ traceId正确传递
+    }
+}
+
+// ✅ 正确5：注入框架线程池
+@Service
+public class OrderService {
+    @Autowired
+    @Qualifier("ttlExecutorService")
+    private ExecutorService executorService;  // ✅ 框架已配置TTL
+}
+```
+
+**为什么必须这样做？**
+- ❌ **直接创建的线程池**：线程复用时会残留上一次请求的 traceId，导致日志混乱
+- ✅ **ThreadPoolFactory/TTL包装**：自动传递和清理MDC，线程归还线程池时不会残留traceId
+- ✅ **@Async注解**：框架已配置TTL支持，自动传递MDC
+
+**修复建议**：
+- 全局搜索：`Executors.new`、`new ThreadPoolExecutor`
+- 替换为：`ThreadPoolFactory.newXxx()` 或使用 `@Async`
+- 对于无法修改的第三方线程池：`ThreadPoolFactory.wrapExecutorService(legacyPool)`
+
+---
+
+### 3.1 DubboApi/Controller职责边界 ✅
 
 **架构分层原则**（SOLID的S - 单一职责）：
 - [ ] DubboApi/Controller只是薄薄的接口层
