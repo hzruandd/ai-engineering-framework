@@ -81,7 +81,7 @@ city-parking-xxx/
 
 ---
 
-## 核心规范（12条必读）
+## 核心规范（13条必读）
 
 ### 1. 实体类规范
 
@@ -764,6 +764,126 @@ public class OrderService {
 - 确保所有快捷命令（如 `/diff-report`、`/generate-tests`）生成的文档都遵循此规范
 - 文档更新时，需要更新时间戳以反映最新修改时间
 
+### 13. 微服务分层架构规范
+
+**⚠️ 核心架构约束**：下游服务禁止对外暴露HTTP接口，只能通过BFF层对外提供服务。
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      前端应用                            │
+│         （Web端、小程序、App）                           │
+└─────────────────────────┬───────────────────────────────┘
+                          │ HTTP/HTTPS
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│               BFF层（Backend For Frontend）              │
+│   city-parking-bff-eop、city-parking-bff-app 等         │
+│   ✅ 允许使用 @RestController                            │
+│   ✅ 对外暴露 HTTP 接口给前端                            │
+│   ✅ 负责聚合、裁剪、适配前端需求                        │
+└─────────────────────────┬───────────────────────────────┘
+                          │ Dubbo RPC（内部通信）
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                    下游业务服务                          │
+│   city-parking-rbac、city-parking-eop、                 │
+│   city-parking-order、city-parking-payment 等           │
+│   ❌ 禁止使用 @RestController                            │
+│   ❌ 禁止对外暴露 HTTP 接口                              │
+│   ✅ 只能提供 @DubboService 接口                         │
+│   ✅ 服务间通过 Dubbo RPC 通信                           │
+└─────────────────────────────────────────────────────────┘
+```
+
+**规范说明**：
+
+**✅ BFF层（city-parking-bff-*）**：
+- 允许使用 `@RestController` 注解
+- 对外暴露 HTTP 接口给前端应用
+- 通过 `@DubboReference` 调用下游服务
+- 负责请求的聚合、裁剪、格式转换
+- 处理前端特定的业务逻辑（如数据脱敏、字段裁剪）
+
+**❌ 下游业务服务（非BFF服务）**：
+- **禁止使用 `@RestController` 注解**
+- **禁止对外暴露任何 HTTP 接口**
+- 只能提供 `@DubboService` 接口供 BFF 层或其他服务调用
+- 服务间通信必须通过 Dubbo RPC
+
+**为什么这样设计**：
+1. **安全性**：统一入口便于安全管控（鉴权、限流、审计）
+2. **解耦**：前端变化不影响下游服务，下游服务专注业务逻辑
+3. **灵活性**：不同前端（Web/App/小程序）可以有不同的 BFF 适配
+4. **可维护性**：避免接口重复暴露，统一接口管理
+
+**违规示例**：
+```java
+// ❌ 错误：下游服务（city-parking-rbac-server）中写了 Controller
+package cn.city.parking.rbac.controller;
+
+@RestController  // ❌ 禁止！下游服务不能有Controller
+@RequestMapping("/api/user")
+public class UserController {
+    // ...
+}
+
+// ❌ 错误：下游服务同时暴露 HTTP 和 Dubbo
+@RestController  // ❌ 禁止
+@DubboService    // ✅ 应该只有这个
+public class UserDubboApiImpl implements UserDubboApi {
+    // ...
+}
+```
+
+**正确示例**：
+```java
+// ✅ 正确：BFF层（city-parking-bff-eop）对外暴露HTTP接口
+package cn.city.parking.bff.eop.controller;
+
+@Slf4j
+@RestController  // ✅ BFF层允许
+@RequestMapping("/api/user")
+public class UserController {
+
+    @DubboReference  // ✅ 调用下游服务
+    private UserDubboApi userDubboApi;
+
+    @GetMapping("/{id}")
+    public ResponseResult<UserVO> getUser(@PathVariable String id) {
+        ResponseResult<User> result = userDubboApi.getInfo(id);
+        // 数据转换、裁剪
+        return ResponseResult.success(convertToVO(result.getData()));
+    }
+}
+
+// ✅ 正确：下游服务（city-parking-rbac-server）只提供Dubbo接口
+package cn.city.parking.rbac.dubbo;
+
+@Slf4j
+@DubboService  // ✅ 只有 DubboService
+public class UserDubboApiImpl extends BaseDubboApi implements UserDubboApi {
+
+    @Autowired
+    private IUserService userService;
+
+    @Override
+    public ResponseResult<User> getInfo(String id) {
+        User user = userService.selectUserById(id);
+        return ResponseResult.success(user);
+    }
+}
+```
+
+**检查方法**：
+```bash
+# 检查下游服务是否有 Controller（应该为空）
+grep -r "@RestController" city-parking-rbac-server/src/
+grep -r "@Controller" city-parking-eop-server/src/
+
+# 只有 BFF 服务可以有 Controller
+grep -r "@RestController" city-parking-bff-eop/src/  # 允许
+```
+
 ---
 
 ## 框架已自动配置功能
@@ -1232,6 +1352,7 @@ private String remark;
 
 | 错误写法 ❌ | 正确写法 ✅ | 原因 |
 |------------|------------|------|
+| 下游服务使用`@RestController` | 只在BFF层使用`@RestController` | 下游服务禁止暴露HTTP接口 |
 | `package cn.city.parking.rbac.entity;` | `package cn.city.parking.rbac.api.entity;` | Entity必须在api包下 |
 | `<artifactId>city-parking-common-core</artifactId>` | `<artifactId>city-parking-common-auth</artifactId>` | API模块依赖错误 |
 | 重复添加Redis、Auth、MySQL、Druid依赖 | 只依赖common-server | common-server已包含 |
@@ -1282,22 +1403,23 @@ private String remark;
 1. **不要创建**：common包、utils包、BusinessException、ResponseResult（已有独立仓库）
 2. **不要使用错误路径**：`cn.city.parking.common.auth.base.BaseDubboApi`（✅ 正确：`cn.city.parking.common.dubbo.filter.base.BaseDubboApi`）
 3. **不要使用不存在的方法**：`RedisUtils.deleteKeys()`（✅ 正确：`batchDeleteObj()`）
+4. **下游服务禁止使用 `@RestController`**：只有BFF层（city-parking-bff-*）可以暴露HTTP接口，下游服务只能提供Dubbo接口
 
 **模块结构**：
-4. **Entity包路径错误**：`cn.city.parking.xxx.entity`（✅ 正确：`cn.city.parking.xxx.api.entity`，必须在api包下）
-5. **API模块依赖错误**：依赖`city-parking-common-core`（✅ 正确：`city-parking-common-auth`）
-6. **Server模块冗余依赖**：不要重复添加Redis、Auth、MySQL、Druid（common-server已包含）
+5. **Entity包路径错误**：`cn.city.parking.xxx.entity`（✅ 正确：`cn.city.parking.xxx.api.entity`，必须在api包下）
+6. **API模块依赖错误**：依赖`city-parking-common-core`（✅ 正确：`city-parking-common-auth`）
+7. **Server模块冗余依赖**：不要重复添加Redis、Auth、MySQL、Druid（common-server已包含）
 
 **配置文件**：
-7. **bootstrap.yml占位符错误**：`${custom-config.server.nacos.*}`（✅ 正确：`${nacos.*}`）
-8. **profiles.active错误**：`${profiles.active:dev}`（✅ 正确：`@profileActive@`）
+8. **bootstrap.yml占位符错误**：`${custom-config.server.nacos.*}`（✅ 正确：`${nacos.*}`）
+9. **profiles.active错误**：`${profiles.active:dev}`（✅ 正确：`@profileActive@`）
 
 **代码规范**：
-9. **不要在DubboApi中使用try-catch**（全局异常处理器会自动处理）
-10. **不要随意捕获BusinessException**（业务异常必须向上抛出）
-11. **不要忘记**：ResponseResult泛型、@TableName、@JsonFormat、@Transactional
-12. **不要添加**：@Mapper、@EnableDubbo、@MapperScan（common-server已配置）
-13. **不要随意使用Redis缓存**（如无必要，不要缓存）
+10. **不要在DubboApi中使用try-catch**（全局异常处理器会自动处理）
+11. **不要随意捕获BusinessException**（业务异常必须向上抛出）
+12. **不要忘记**：ResponseResult泛型、@TableName、@JsonFormat、@Transactional
+13. **不要添加**：@Mapper、@EnableDubbo、@MapperScan（common-server已配置）
+14. **不要随意使用Redis缓存**（如无必要，不要缓存）
 
 ### ✅ 必须做的事
 1. **实体类**：

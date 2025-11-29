@@ -13,7 +13,7 @@ description: 代码审查清单，用于开发完成后的自测和提测前审�
 
 - [Spring Java Format代码风格](#一spring-java-format代码风格) - 代码格式规范
 - [代码质量检查](#二代码质量检查-clean-code) - Clean Code原则
-- [核心框架规范](#三核心框架规范) - 事务、缓存、异常、幂等
+- [核心框架规范](#三核心框架规范) - **微服务分层架构**、线程池、事务、缓存、异常、幂等
 - [设计原则检查](#四设计原则检查-solid) - SOLID原则
 - [安全规范检查](#五安全规范检查-owasp) - OWASP标准
 - [性能优化检查](#六性能优化检查) - 性能最佳实践
@@ -773,7 +773,113 @@ public class OrderService {
 
 ## 三、核心框架规范
 
-### 3.0 线程池使用规范 ✅
+### 3.0 微服务分层架构规范 ✅
+
+**⚠️ 核心架构约束**：下游服务禁止对外暴露HTTP接口，只能通过BFF层对外提供服务。
+
+**架构分层检查**：
+- [ ] ❌ **下游业务服务禁止使用 `@RestController`**
+- [ ] ❌ **下游业务服务禁止使用 `@Controller`**
+- [ ] ❌ **下游业务服务禁止对外暴露任何 HTTP 接口**
+- [ ] ✅ **下游业务服务只能提供 `@DubboService` 接口**
+- [ ] ✅ **只有 BFF 层（city-parking-bff-*）可以使用 `@RestController`**
+
+**服务类型识别**：
+| 服务类型 | 命名模式 | 允许 Controller | 示例 |
+|---------|---------|----------------|------|
+| BFF层 | `city-parking-bff-*` | ✅ 允许 | city-parking-bff-eop、city-parking-bff-app |
+| 下游服务 | 其他所有服务 | ❌ 禁止 | city-parking-rbac、city-parking-eop、city-parking-order |
+
+**违规示例识别**：
+```java
+// ❌ 错误1：下游服务（city-parking-rbac-server）中写了 Controller
+package cn.city.parking.rbac.controller;
+
+@RestController  // ❌ 禁止！下游服务不能有Controller
+@RequestMapping("/api/user")
+public class UserController {
+    @Autowired
+    private IUserService userService;
+
+    @GetMapping("/{id}")
+    public ResponseResult<User> getUser(@PathVariable String id) {
+        return ResponseResult.success(userService.selectUserById(id));
+    }
+}
+
+// ❌ 错误2：下游服务同时暴露 HTTP 和 Dubbo
+@RestController  // ❌ 禁止
+@DubboService    // ✅ 应该只有这个
+public class UserDubboApiImpl implements UserDubboApi {
+    // ...
+}
+
+// ❌ 错误3：下游服务使用 @Controller
+@Controller  // ❌ 禁止
+@RequestMapping("/page")
+public class PageController {
+    @GetMapping("/user")
+    public String userPage() {
+        return "user";
+    }
+}
+```
+
+**正确示例**：
+```java
+// ✅ 正确：BFF层对外暴露HTTP接口
+package cn.city.parking.bff.eop.controller;
+
+@Slf4j
+@RestController  // ✅ BFF层允许
+@RequestMapping("/api/user")
+public class UserController {
+
+    @DubboReference  // ✅ 调用下游服务
+    private UserDubboApi userDubboApi;
+
+    @GetMapping("/{id}")
+    public ResponseResult<UserVO> getUser(@PathVariable String id) {
+        ResponseResult<User> result = userDubboApi.getInfo(id);
+        return ResponseResult.success(convertToVO(result.getData()));
+    }
+}
+
+// ✅ 正确：下游服务只提供Dubbo接口
+package cn.city.parking.rbac.dubbo;
+
+@Slf4j
+@DubboService  // ✅ 只有 DubboService，没有 Controller
+public class UserDubboApiImpl extends BaseDubboApi implements UserDubboApi {
+
+    @Autowired
+    private IUserService userService;
+
+    @Override
+    public ResponseResult<User> getInfo(String id) {
+        return ResponseResult.success(userService.selectUserById(id));
+    }
+}
+```
+
+**检查方法**：
+```bash
+# 检查下游服务是否有 Controller（应该为空）
+grep -rn "@RestController" city-parking-rbac-server/src/
+grep -rn "@Controller" city-parking-eop-server/src/
+
+# 只有 BFF 服务可以有 Controller
+grep -rn "@RestController" city-parking-bff-eop/src/  # 允许
+```
+
+**修复建议**：
+- 如果下游服务有 Controller，需要将其移动到对应的 BFF 层
+- BFF 层通过 `@DubboReference` 调用下游服务的 `@DubboService` 接口
+- 下游服务专注于业务逻辑，不关心前端展示
+
+---
+
+### 3.1 线程池使用规范 ✅
 
 **MDC传递与清理**（防止traceId残留）：
 - [ ] ❌ **禁止使用 `Executors.newFixedThreadPool()` 等方法直接创建线程池**
