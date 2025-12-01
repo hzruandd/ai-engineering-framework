@@ -1051,6 +1051,67 @@ public ResponseResult<Integer> updateStatus(String id, Integer status) {
 - DubboApi/Controller保持简洁，每个方法不超过10行
 - 使用`/new-api`命令生成符合规范的代码
 
+### 3.1.1 Service层参数校验规范（灵活处理）
+
+**核心原则**：参数校验以 DubboApi/Controller 层为主，Service 层按场景灵活处理。
+
+**⚠️ 审查时不要因为 Service 方法没做 null 检查就标记为 P1 问题**
+
+**分层校验策略**：
+
+| 层级 | 校验要求 | 说明 |
+|------|----------|------|
+| DubboApi/Controller | **必须校验** | 入口统一校验，使用 Preconditions 或 ValidateUtil |
+| Service（对外核心方法） | **建议校验** | 可能被多处调用的公共方法，做防御性校验 |
+| Service（内部方法） | **不需要校验** | 私有方法信任调用方，避免重复校验 |
+| Service（简单CRUD） | **不需要校验** | 上层已校验，避免代码冗余 |
+
+**需要做防御性校验的 Service 方法**：
+- ✅ 被多个 DubboApi/Controller 调用的公共方法
+- ✅ 涉及资金、权益等敏感操作的方法
+- ✅ 对外暴露给其他服务调用的方法
+- ✅ 参数来源不确定（可能绕过接口层直接调用）
+
+**不需要做校验的 Service 方法**：
+- ❌ 简单的 CRUD 方法（selectById、insert、update、delete）
+- ❌ 私有方法（private method）
+- ❌ 只被单一入口调用的方法
+- ❌ 上层已经做过完整校验的方法
+
+**代码示例**：
+```java
+// ✅ DubboApi层：必须做参数校验
+@Override
+public ResponseResult<User> getInfo(String id) {
+    Preconditions.checkArgument(StringUtils.isNotBlank(id), "用户ID不能为空");
+    User user = userService.selectUserById(id);
+    return ResponseResult.success(user);
+}
+
+// ✅ Service层（简单查询）：不需要重复校验，上层已校验
+@Override
+public User selectUserById(String id) {
+    return baseMapper.selectById(id);  // 信任上层已校验
+}
+
+// ✅ Service层（核心方法，被多处调用）：建议做防御性校验
+@Override
+@Transactional(rollbackFor = Exception.class)
+public void transferBalance(String fromUserId, String toUserId, BigDecimal amount) {
+    // 防御性校验：此方法可能被多个入口调用
+    Preconditions.checkArgument(StringUtils.isNotBlank(fromUserId), "转出用户ID不能为空");
+    Preconditions.checkArgument(StringUtils.isNotBlank(toUserId), "转入用户ID不能为空");
+    Preconditions.checkArgument(amount != null && amount.compareTo(BigDecimal.ZERO) > 0, "转账金额必须大于0");
+
+    // 业务逻辑...
+}
+```
+
+**审查判断标准**：
+- Service 方法没做参数校验 → **不是 P1 问题**（除非是敏感操作且无上层校验）
+- DubboApi/Controller 没做参数校验 → **P2 问题**（应该在入口统一校验）
+- 敏感操作（资金、权益）没做任何校验 → **P1 问题**
+
 ### 3.1 事务与并发 ✅
 
 **事务管理**：
@@ -1203,6 +1264,15 @@ public void processWithLock(String orderId) {
   - 并发冲突（乐观锁失败，单次）
 - **告警渠道**：仅记录日志，不发送告警
 - **响应时间**：日常监控
+
+**⚠️ 不需要告警的异常（可忽略）**：
+- **BusinessException（自定义业务异常）**：属于正常业务流程控制，不需要告警
+  - 示例：`throw new BusinessException("该用户已存在")`
+  - 示例：`throw new BusinessException("订单已取消，无法支付")`
+  - 示例：`throw new BusinessException("优惠券不在有效期内")`
+- **参数校验异常**：如 `@NotBlank`、`@Size` 等校验失败
+- **权限校验异常**：如未登录、无权限访问等
+- **这些异常是业务逻辑的一部分，由全局异常处理器统一处理，返回友好提示给用户即可**
 
 #### 3.5.3 必须告警的场景 ✅
 
