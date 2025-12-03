@@ -9,7 +9,6 @@
 **IMPORTANT - DOCUMENTATION LANGUAGE REQUIREMENT:**
 
 当你生成或输出任何文档类型的内容时，**MUST use Chinese (简体中文)**。这包括但不限于：
-
 - ✅ **所有markdown文档** (.md文件)
 - ✅ **代码审查报告** (CODE_REVIEW_*.md)
 - ✅ **代码修改报告** (CHANGE_REPORT_*.md)
@@ -35,6 +34,7 @@
 |------|------|
 | **Common组件** | [29个通用组件详解（架构、依赖、使用）](docs/architecture/common-components-architecture.md) |
 | **框架功能** | [框架已自动配置的10大功能](docs/guides/framework-features.md) |
+| **SOLID原则** | [设计原则详解与代码示例](docs/guides/solid-principles.md) |
 | **异步任务** | [线程池选择、@Async、MDC传递](docs/guides/detailed-standards.md#1-异步任务使用规范) |
 | **幂等性** | [@NoRepeatSubmit、业务唯一键、分布式锁](docs/guides/detailed-standards.md#2-api幂等性规范) |
 | **性能优化** | [分页、批量操作、索引使用](docs/guides/detailed-standards.md#4-性能优化规范) |
@@ -111,7 +111,6 @@ import javax.validation.constraints.Email;
 @TableName("sys_user")  // ✅ 必须指定表名
 @Schema(description = "用户实体")
 public class User extends BusinessEntity {
-
     @Schema(description = "用户名")
     @NotBlank(message = "用户名不能为空")  // ✅ 参数校验注解
     @Size(min = 1, max = 30, message = "用户名长度必须在1-30个字符之间")
@@ -189,7 +188,6 @@ import cn.city.parking.common.core.web.domain.ResponseResult;
 @Slf4j
 @DubboService
 public class UserDubboApiImpl extends BaseDubboApi implements UserDubboApi {
-
     @Autowired
     private IUserService userService;
 
@@ -197,10 +195,8 @@ public class UserDubboApiImpl extends BaseDubboApi implements UserDubboApi {
     public ResponseResult<User> getInfo(String id) {
         // 1. 参数校验
         Preconditions.checkArgument(StringUtils.isNotBlank(id), "用户ID不能为空");
-
         // 2. 调用Service（所有业务逻辑在Service层）
         User user = userService.selectUserById(id);
-
         // 3. 返回结果（可选：记录日志）
         return ResponseResult.success(user);
     }
@@ -217,13 +213,10 @@ public class UserDubboApiImpl extends BaseDubboApi implements UserDubboApi {
     public ResponseResult<Integer> add(User user) {
         // 1. 参数校验
         Preconditions.checkNotNull(user, "用户信息不能为空");
-
         // 2. 记录日志
         log.info("创建用户，用户名：{}", user.getUsername());
-
         // 3. 调用Service
         int rows = userService.insertUser(user);
-
         // 4. 返回结果
         return ResponseResult.success(rows);
     }
@@ -293,7 +286,6 @@ import cn.city.parking.common.core.web.domain.ResponseResult;
 @RestController
 @RequestMapping("/user")
 public class UserController {
-
     @Autowired
     private IUserService userService;
 
@@ -301,10 +293,8 @@ public class UserController {
     public ResponseResult<User> getInfo(@PathVariable String id) {
         // 1. 参数校验（简单参数）
         Preconditions.checkArgument(StringUtils.isNotBlank(id), "用户ID不能为空");
-
         // 2. 调用Service
         User user = userService.selectUserById(id);
-
         // 3. 返回结果
         return ResponseResult.success(user);
     }
@@ -313,10 +303,8 @@ public class UserController {
     public ResponseResult<Integer> add(@RequestBody User user) {
         // 1. 参数校验（复杂对象，使用ValidateUtil）
         ValidateUtil.validate(user);
-
         // 2. 调用Service
         int rows = userService.insertUser(user);
-
         // 3. 返回结果
         return ResponseResult.success(rows);
     }
@@ -336,13 +324,10 @@ import com.google.common.base.Preconditions;
 public ResponseResult<User> getInfo(String id) {
     // 校验非空
     Preconditions.checkArgument(StringUtils.isNotBlank(id), "用户ID不能为空");
-
     // 校验条件
     Preconditions.checkArgument(age > 0, "年龄必须大于0");
-
     // 校验非null
     Preconditions.checkNotNull(user, "用户对象不能为空");
-
     return ResponseResult.success(userService.selectUserById(id));
 }
 ```
@@ -356,7 +341,6 @@ import cn.city.parking.common.core.utils.ValidateUtil;
 public ResponseResult<Integer> add(@RequestBody User user) {
     // 自动校验对象中所有带@NotBlank、@Size等注解的字段
     ValidateUtil.validate(user);
-
     int rows = userService.insertUser(user);
     return ResponseResult.success(rows);
 }
@@ -392,7 +376,6 @@ public interface IUserService extends IService<User> {  // ✅ 继承IService
 // Service实现
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
-
     @Override
     @Transactional(rollbackFor = Exception.class)  // ✅ 增删改必须加事务
     public int insertUser(User user) {
@@ -431,7 +414,6 @@ public class CityParkingXxxApplication {
 ```java
 @Slf4j
 public class OrderDubboApiImpl extends BaseDubboApi {
-
     @Override
     public ResponseResult<Integer> add(Order order) {
         log.info("创建订单，用户ID：{}，金额：{}元", order.getUserId(), order.getAmount());
@@ -519,228 +501,23 @@ mvn spring-javaformat:validate # 检查格式
 
 ### 11. SOLID设计原则
 
+**详见** → [SOLID设计原则详解](docs/guides/solid-principles.md)
+
 **核心原则**：编写可维护、可扩展、易测试的代码
 
-#### S - 单一职责原则（Single Responsibility Principle）
-**定义**：一个类只负责一件事，只有一个引起它变化的原因
+| 原则 | 定义 | 框架应用 |
+|------|------|----------|
+| **S** - 单一职责 | 一个类只负责一件事 | DubboApi/Controller、Service、Mapper 各司其职 |
+| **O** - 开闭原则 | 对扩展开放，对修改关闭 | 使用策略模式、工厂模式支持扩展 |
+| **L** - 里氏替换 | 子类可替换父类 | 子类增强父类，不改变原有行为 |
+| **I** - 接口隔离 | 使用多个专门接口 | 拆分 IUserQueryService、IUserCommandService |
+| **D** - 依赖倒置 | 依赖抽象不依赖实现 | @Autowired 注入接口，不使用 new |
 
-**✅ 正确示例**：
-```java
-// ✅ UserService只负责用户业务逻辑
-@Service
-public class UserServiceImpl implements IUserService {
-    public User getUserById(String id) {
-        return userMapper.selectById(id);
-    }
-}
-
-// ✅ UserNotificationService只负责用户通知
-@Service
-public class UserNotificationService {
-    public void sendWelcomeEmail(User user) {
-        // 发送欢迎邮件
-    }
-}
-```
-
-**❌ 错误示例**：
-```java
-// ❌ UserService职责过多：业务逻辑 + 通知 + 导出
-@Service
-public class UserService {
-    public User createUser(User user) {
-        userMapper.insert(user);
-        sendWelcomeEmail(user);  // 通知职责
-        return user;
-    }
-
-    private void sendWelcomeEmail(User user) {
-        // 发送邮件逻辑
-    }
-
-    public byte[] exportUsers() {
-        // 导出Excel逻辑
-    }
-}
-```
-
-#### O - 开闭原则（Open-Closed Principle）
-**定义**：对扩展开放，对修改关闭
-
-**✅ 正确示例**：
-```java
-// ✅ 使用策略模式，新增支付方式不需要修改原有代码
-public interface PaymentStrategy {
-    void pay(Order order);
-}
-
-@Component("wechat")
-public class WeChatPayStrategy implements PaymentStrategy {
-    public void pay(Order order) { /* 微信支付 */ }
-}
-
-@Component("alipay")
-public class AlipayStrategy implements PaymentStrategy {
-    public void pay(Order order) { /* 支付宝支付 */ }
-}
-
-@Service
-public class PaymentService {
-    @Autowired
-    private Map<String, PaymentStrategy> strategyMap;  // Spring自动注入
-
-    public void pay(Order order, String payType) {
-        PaymentStrategy strategy = strategyMap.get(payType);
-        strategy.pay(order);
-    }
-}
-```
-
-**❌ 错误示例**：
-```java
-// ❌ 每次新增支付方式都要修改这个方法
-public void pay(Order order, String payType) {
-    if ("wechat".equals(payType)) {
-        // 微信支付
-    }
-    else if ("alipay".equals(payType)) {
-        // 支付宝支付
-    }
-    else if ("union".equals(payType)) {  // 新增就要改这里
-        // 银联支付
-    }
-}
-```
-
-#### L - 里氏替换原则（Liskov Substitution Principle）
-**定义**：子类可以替换父类，且不改变程序的正确性
-
-**✅ 正确示例**：
-```java
-// ✅ 子类增强父类行为，不改变原有逻辑
-public abstract class BaseUserService {
-    public User getUser(String id) {
-        return userMapper.selectById(id);
-    }
-}
-
-public class VipUserService extends BaseUserService {
-    @Override
-    public User getUser(String id) {
-        User user = super.getUser(id);
-        // 增强：加载VIP特权信息
-        user.setVipInfo(loadVipInfo(id));
-        return user;
-    }
-}
-```
-
-**❌ 错误示例**：
-```java
-// ❌ 子类改变了父类行为，返回null违反约定
-public class RestrictedUserService extends BaseUserService {
-    @Override
-    public User getUser(String id) {
-        // 错误：改变了父类的行为，父类永远不返回null
-        if (isRestricted(id)) {
-            return null;  // 违反父类约定
-        }
-        return super.getUser(id);
-    }
-}
-```
-
-#### I - 接口隔离原则（Interface Segregation Principle）
-**定义**：使用多个专门的接口，而不是单一的总接口
-
-**✅ 正确示例**：
-```java
-// ✅ 拆分成多个小接口
-public interface IUserQueryService {
-    User getUserById(String id);
-    List<User> getUserList(User query);
-}
-
-public interface IUserCommandService {
-    int createUser(User user);
-    int updateUser(User user);
-    int deleteUser(String id);
-}
-
-// 实现类可以只实现需要的接口
-@Service
-public class UserQueryServiceImpl implements IUserQueryService {
-    // 只实现查询方法
-}
-```
-
-**❌ 错误示例**：
-```java
-// ❌ 大而全的接口，强迫实现不需要的方法
-public interface IUserService {
-    User getUserById(String id);
-    List<User> getUserList(User query);
-    int createUser(User user);
-    int updateUser(User user);
-    int deleteUser(String id);
-    void exportToExcel();  // 不是所有实现类都需要导出功能
-    void sendEmail();      // 不是所有实现类都需要发邮件
-}
-```
-
-#### D - 依赖倒置原则（Dependency Inversion Principle）
-**定义**：依赖抽象，不依赖具体实现
-
-**✅ 正确示例**：
-```java
-// ✅ 依赖接口，不依赖具体实现
-@Service
-public class OrderService {
-    @Autowired
-    private IPaymentService paymentService;  // 依赖抽象接口
-
-    @Autowired
-    private INotificationService notificationService;  // 依赖抽象接口
-
-    public void createOrder(Order order) {
-        orderMapper.insert(order);
-        paymentService.process(order);  // 不关心具体是哪种支付方式
-        notificationService.send(order);  // 不关心具体是邮件还是短信
-    }
-}
-```
-
-**❌ 错误示例**：
-```java
-// ❌ 依赖具体实现，紧耦合
-@Service
-public class OrderService {
-    // 直接依赖具体实现类
-    private WeChatPayService weChatPayService = new WeChatPayService();
-    private EmailService emailService = new EmailService();
-
-    public void createOrder(Order order) {
-        orderMapper.insert(order);
-        weChatPayService.pay(order);  // 紧耦合，无法替换
-        emailService.sendEmail(order);  // 紧耦合，无法替换
-    }
-}
-```
-
-**SOLID综合应用场景**：
-- **S**：DubboApi/Controller只负责接口适配，Service负责业务逻辑，Mapper负责数据访问
-- **O**：使用策略模式、工厂模式、模板方法模式支持扩展
-- **L**：子类增强父类，不改变原有行为（如：VipUserService继承UserService）
-- **I**：拆分IUserQueryService、IUserCommandService，而不是一个大而全的IUserService
-- **D**：Service依赖抽象接口，通过@Autowired注入，不使用new创建依赖
-
-**实践建议**：
-- ✅ 每个类/接口设计前，先问自己：它的单一职责是什么？
-- ✅ 新增功能时，优先考虑扩展而不是修改（开闭原则）
-- ✅ 依赖注入使用@Autowired，面向接口编程
-- ✅ 使用设计模式（策略、工厂、模板方法）应对变化
-- ❌ 避免"上帝类"（God Class）：一个类超过500行、职责超过3个
-- ❌ 避免"大泥球"（Big Ball of Mud）：所有代码耦合在一起
+**实践要点**：
+- ✅ 每个类设计前先问：它的单一职责是什么？
+- ✅ 新增功能优先扩展而非修改
+- ✅ 面向接口编程，使用 @Autowired 注入
+- ❌ 避免"上帝类"（超过500行、职责超过3个）
 
 ### 12. 文档生成日期时间规范
 
@@ -844,7 +621,6 @@ package cn.city.parking.bff.eop.controller;
 @RestController  // ✅ BFF层允许
 @RequestMapping("/api/user")
 public class UserController {
-
     @DubboReference  // ✅ 调用下游服务
     private UserDubboApi userDubboApi;
 
@@ -862,7 +638,6 @@ package cn.city.parking.rbac.dubbo;
 @Slf4j
 @DubboService  // ✅ 只有 DubboService
 public class UserDubboApiImpl extends BaseDubboApi implements UserDubboApi {
-
     @Autowired
     private IUserService userService;
 
@@ -982,7 +757,6 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
     <modelVersion>4.0.0</modelVersion>
-
     <!-- ✅ 根pom的parent是city-parking-parent -->
     <parent>
         <groupId>cn.city-parking</groupId>
@@ -990,20 +764,17 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
         <version>2.0.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
-
     <groupId>cn.city-parking</groupId>
     <artifactId>city-parking-xxx</artifactId>
     <version>2.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>city-parking-xxx</name>
     <description>XXX服务</description>
-
     <!-- ✅ 聚合子模块 -->
     <modules>
         <module>city-parking-xxx-api</module>
         <module>city-parking-xxx-server</module>
     </modules>
-
     <build>
         <plugins>
             <!-- ✅ 根pom禁止发布到Maven私库 -->
@@ -1025,7 +796,6 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
     <modelVersion>4.0.0</modelVersion>
-
     <!-- ✅ API模块直接继承city-parking-parent -->
     <!-- ❌ 不要继承根pom（city-parking-xxx） -->
     <parent>
@@ -1034,25 +804,21 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
         <version>2.0.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
-
     <groupId>cn.city-parking</groupId>
     <artifactId>city-parking-xxx-api</artifactId>
     <version>2.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>city-parking-xxx-api</name>
     <description>XXX服务API</description>
-
     <dependencies>
         <!-- ✅ API模块必须依赖city-parking-common-auth -->
         <dependency>
             <groupId>cn.city-parking</groupId>
             <artifactId>city-parking-common-auth</artifactId>
         </dependency>
-
         <!-- ❌ 错误：不要依赖city-parking-common-core -->
         <!-- common-auth已经包含了common-core -->
     </dependencies>
-
     <!-- ⚠️ API模块不配置deploy插件，默认会发布到Maven私库 -->
 </project>
 ```
@@ -1062,7 +828,6 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
     <modelVersion>4.0.0</modelVersion>
-
     <!-- ✅ Server模块直接继承city-parking-parent -->
     <!-- ❌ 不要继承根pom（city-parking-xxx） -->
     <parent>
@@ -1071,35 +836,30 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
         <version>2.0.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
-
     <groupId>cn.city-parking</groupId>
     <artifactId>city-parking-xxx-server</artifactId>
     <version>2.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>city-parking-xxx-server</name>
     <description>XXX服务实现</description>
-
     <dependencies>
         <!-- ✅ 1. common-server（已包含Redis、Auth、MySQL、Druid） -->
         <dependency>
             <groupId>cn.city-parking</groupId>
             <artifactId>city-parking-common-server</artifactId>
         </dependency>
-
         <!-- ✅ 2. 本服务API模块 -->
         <dependency>
             <groupId>cn.city-parking</groupId>
             <artifactId>city-parking-xxx-api</artifactId>
             <version>2.0.0-SNAPSHOT</version>
         </dependency>
-
         <!-- ❌ 以下依赖不要添加（common-server已包含） -->
         <!-- city-parking-common-redis -->
         <!-- city-parking-common-auth -->
         <!-- mysql-connector-j -->
         <!-- druid-spring-boot-starter -->
     </dependencies>
-
     <build>
         <plugins>
             <!-- ✅ Spring Boot打包插件（必须配置mainClass） -->
@@ -1118,7 +878,6 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
                     </execution>
                 </executions>
             </plugin>
-
             <!-- ✅ 禁止Server模块发布到Maven私库 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -1128,7 +887,6 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
                     <skip>true</skip>
                 </configuration>
             </plugin>
-
             <!-- ✅ 代码格式化插件 -->
             <plugin>
                 <groupId>io.spring.javaformat</groupId>
@@ -1221,7 +979,6 @@ dubbo:
 ```
 
 #### bootstrap-dev.yml（开发环境）
-
 ```yaml
 # 自定义参数（开发环境）
 nacos:
@@ -1235,7 +992,6 @@ sentinel:
 ```
 
 #### bootstrap-prod.yml（生产环境）
-
 ```yaml
 # 自定义参数（生产环境）
 nacos:
@@ -1249,7 +1005,6 @@ sentinel:
 ```
 
 #### bootstrap-test.yml（测试环境）
-
 ```yaml
 # 自定义参数（测试环境）
 nacos:
