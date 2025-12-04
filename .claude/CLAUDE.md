@@ -4,6 +4,12 @@
 
 ---
 
+## 🚨 编码前强制检查（MUST READ BEFORE CODING）
+
+**⚠️ 每次编写业务代码前，必须先阅读 → [编码前检查清单](docs/guides/pre-coding-checklist.md)**
+
+---
+
 ## 🌐 语言输出规范
 
 **IMPORTANT - DOCUMENTATION LANGUAGE REQUIREMENT:**
@@ -32,6 +38,7 @@
 
 | 场景 | 文档 |
 |------|------|
+| **编码前检查** | [编码前检查清单（项目类型识别、组件查阅）](docs/guides/pre-coding-checklist.md) |
 | **Common组件** | [29个通用组件详解（架构、依赖、使用）](docs/architecture/common-components-architecture.md) |
 | **框架功能** | [框架已自动配置的10大功能](docs/guides/framework-features.md) |
 | **SOLID原则** | [设计原则详解与代码示例](docs/guides/solid-principles.md) |
