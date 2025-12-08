@@ -42,6 +42,7 @@
 | **Common组件** | [29个通用组件详解（架构、依赖、使用）](docs/architecture/common-components-architecture.md) |
 | **框架功能** | [框架已自动配置的10大功能](docs/guides/framework-features.md) |
 | **SOLID原则** | [设计原则详解与代码示例](docs/guides/solid-principles.md) |
+| **状态码规范** | [前后端状态码规范设计（三大分类、异常处理）](docs/design/前后端状态码规范设计.md) |
 | **异步任务** | [线程池选择、@Async、MDC传递](docs/guides/detailed-standards.md#1-异步任务使用规范) |
 | **幂等性** | [@NoRepeatSubmit、业务唯一键、分布式锁](docs/guides/detailed-standards.md#2-api幂等性规范) |
 | **性能优化** | [分页、批量操作、索引使用](docs/guides/detailed-standards.md#4-性能优化规范) |
