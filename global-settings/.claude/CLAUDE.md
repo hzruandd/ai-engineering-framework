@@ -181,12 +181,12 @@ public class User extends BusinessEntity {
 - ✅ **DubboApi/Controller只是薄薄的接口层**，遵循单一职责原则(SRP)
 - ✅ **只负责4件事**：参数校验 → 调用Service → 记录日志 → 返回结果
 - ❌ **绝对不允许**：
-  - 复杂的业务判断和计算
-  - 查询条件构建（LambdaQueryWrapper、Specification等）
-  - 直接调用Mapper（跨层调用）
-  - 循环处理数据、数据转换
-  - 事务控制（事务在Service层）
-  - 调用多个Service后再做业务处理
+    - 复杂的业务判断和计算
+    - 查询条件构建（LambdaQueryWrapper、Specification等）
+    - 直接调用Mapper（跨层调用）
+    - 循环处理数据、数据转换
+    - 事务控制（事务在Service层）
+    - 调用多个Service后再做业务处理
 
 **✅ 正确示例**（薄层）：
 ```java
@@ -252,9 +252,9 @@ public ResponseResult<Integer> updateStatus(String id, Integer status) {
     if (user.getStatus() == 1 && status == 0) {
         // 业务逻辑：如果当前是启用状态，禁用前检查是否有未完成订单
         Long count = orderMapper.selectCount(
-            new LambdaQueryWrapper<Order>()
-                .eq(Order::getUserId, id)
-                .eq(Order::getStatus, "PENDING")
+                new LambdaQueryWrapper<Order>()
+                        .eq(Order::getUserId, id)
+                        .eq(Order::getStatus, "PENDING")
         );
         if (count > 0) {
             throw new BusinessException("该用户有未完成订单，不能禁用");
@@ -365,10 +365,10 @@ public ResponseResult<Integer> add(@RequestBody User user) {
 - ✅ **返回值必须用ResponseResult<T>带泛型**
 - ✅ **分页查询必须调用startDubboPage()**
 - ✅ **参数校验（推荐但非强制）**：
-  - 简单参数：用`Preconditions.checkArgument()`
-  - 复杂对象：用`ValidateUtil.validate()`
-  - 校验注解可加在Entity、DTO、VO等任何JavaBean对象上
-  - Controller层的参数校验根据实际情况灵活选择
+    - 简单参数：用`Preconditions.checkArgument()`
+    - 复杂对象：用`ValidateUtil.validate()`
+    - 校验注解可加在Entity、DTO、VO等任何JavaBean对象上
+    - Controller层的参数校验根据实际情况灵活选择
 - ✅ **DubboApi/Controller保持薄层，所有业务逻辑必须放在Service层**
 - ❌ **不要随意捕获异常**（全局异常处理器会自动处理）
 - ❌ **永远不要捕获BusinessException**（业务异常必须向上抛出）
@@ -393,15 +393,33 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 ```
 
 ### 5. Mapper规范
+
+**⚠️ 重要**：Mapper必须继承 `CommonMapper`（而非 `BaseMapper`）才能使用批量插入方法。
+
 ```java
-// ✅ 不需要@Mapper注解（common-server已自动扫描）
-public interface UserMapper extends BaseMapper<User> {
+// ✅ 正确：继承CommonMapper（框架标准做法）
+import cn.city.parking.common.server.injector.CommonMapper;
+
+public interface UserMapper extends CommonMapper<User> {
     User selectByUsername(@Param("username") String username);
 }
 
-// ✅ 框架已自动注入批量方法
-userMapper.insertBatchSomeColumn(userList);  // 批量插入（排除updateTime等UPDATE字段）
+// ✅ 使用批量插入方法（高性能，自动排除UPDATE字段）
+userMapper.insertBatchSomeColumn(userList);  // 批量插入（性能提升4-6倍）
 ```
+
+**继承关系**：
+```
+CommonMapper (框架扩展，位于 common-server)
+    ├── 继承 BaseMapper<T> (MyBatis Plus)
+    └── 扩展方法：insertBatchSomeColumn (批量插入)
+```
+
+**关键要点**：
+- ✅ 不需要 `@Mapper` 注解（common-server已自动扫描）
+- ✅ 继承 `CommonMapper` 而非 `BaseMapper`
+- ✅ 包路径：`cn.city.parking.common.server.injector.CommonMapper`
+- ✅ 批量插入自动排除 `updateTime`、`updateBy` 等UPDATE字段
 
 ### 6. 启动类规范
 ```java
@@ -712,13 +730,20 @@ common-server已自动配置：
 **详见** → [Mapper继承说明](docs/guides/detailed-standards.md#3-mapper继承说明)
 
 ```java
-// ✅ 继承BaseMapper即可（框架已注入批量方法）
-public interface UserMapper extends BaseMapper<User> {
+// ✅ 必须继承CommonMapper（才能使用批量插入）
+import cn.city.parking.common.server.injector.CommonMapper;
+
+public interface UserMapper extends CommonMapper<User> {
 }
 
-// 使用
-userMapper.insertBatchSomeColumn(userList);  // 批量插入
+// 使用批量插入（高性能，4-6倍提升）
+userMapper.insertBatchSomeColumn(userList);  // 自动排除UPDATE字段
 ```
+
+**⚠️ 关键**：
+- 继承 `CommonMapper`（而非 `BaseMapper`）
+- 包路径：`cn.city.parking.common.server.injector.CommonMapper`
+- 批量插入性能提升 4-6 倍
 
 ### 性能优化
 **详见** → [性能优化规范](docs/guides/detailed-standards.md#4-性能优化规范)
@@ -752,9 +777,9 @@ userMapper.insertBatchSomeColumn(userList);  // 批量插入
 - **city-parking-parent**：独立仓库，**必须发布到Maven私库**，所有微服务都依赖它
 - **city-parking-common-xxx**：独立仓库，发布到Maven私库，提供通用组件
 - **微服务项目（如city-parking-eop）**：独立仓库，包含：
-  - 根pom（city-parking-xxx/pom.xml）：仅作为**聚合器**，用于本地开发，**不发布到Maven私库**
-  - API模块：直接继承city-parking-parent（从Maven私库获取），发布到Maven私库
-  - Server模块：直接继承city-parking-parent，不发布到Maven私库
+    - 根pom（city-parking-xxx/pom.xml）：仅作为**聚合器**，用于本地开发，**不发布到Maven私库**
+    - API模块：直接继承city-parking-parent（从Maven私库获取），发布到Maven私库
+    - Server模块：直接继承city-parking-parent，不发布到Maven私库
 
 **发布策略**：
 - ✅ **发布到Maven私库**：city-parking-parent、city-parking-common-xxx、微服务的API模块
@@ -1126,6 +1151,7 @@ private String remark;
 | `User user = RedisUtils.getCacheObject(key);` | `User user = RedisUtils.getCacheObject(key, User.class);` | 需要类型转换 |
 | `ResponseResult getInfo(String id)` | `ResponseResult<User> getInfo(String id)` | 缺少泛型 |
 | `@Mapper public interface UserMapper` | `public interface UserMapper` | 不需要@Mapper |
+| `extends BaseMapper<User>` | `extends CommonMapper<User>` | 需要继承CommonMapper才能使用批量插入 |
 | `@Transactional` | `@Transactional(rollbackFor = Exception.class)` | 未指定rollbackFor |
 | `public class User extends BusinessEntity` | `@TableName("sys_user") public class User extends BusinessEntity` | 缺少@TableName |
 | 缺少mainClass配置 | `<mainClass>cn.city.parking.xxx.XxxApplication</mainClass>` | 无法打包jar |
@@ -1186,12 +1212,12 @@ private String remark;
 
 ### ✅ 必须做的事
 1. **实体类**：
-   - 继承BusinessEntity + @TableName + LocalDateTime字段@JsonFormat
-   - Entity包路径必须在`xxx.api.entity`下（不是`xxx.entity`）
-   - 如果数据库有create_by、update_by、del_flag、revision字段，必须在实体类中显式声明
+    - 继承BusinessEntity + @TableName + LocalDateTime字段@JsonFormat
+    - Entity包路径必须在`xxx.api.entity`下（不是`xxx.entity`）
+    - 如果数据库有create_by、update_by、del_flag、revision字段，必须在实体类中显式声明
 2. **配置文件**：
-   - 必须创建4个文件：bootstrap.yml + bootstrap-dev/prod/test.yml
-   - 使用`@profileActive@`（不是`${profiles.active:dev}`）
+    - 必须创建4个文件：bootstrap.yml + bootstrap-dev/prod/test.yml
+    - 使用`@profileActive@`（不是`${profiles.active:dev}`）
 3. **Service接口**：继承IService<T>
 4. **Service实现**：增删改方法@Transactional(rollbackFor = Exception.class)
 5. **DubboApi**：返回ResponseResult<T>带泛型 + 分页调用startDubboPage() + 参数校验Preconditions
@@ -1216,20 +1242,20 @@ private String remark;
 <artifactId>city-parking-xxx</artifactId>
 <packaging>pom</packaging>
 <modules>
-    <module>city-parking-xxx-api</module>
-    <module>city-parking-xxx-server</module>
+<module>city-parking-xxx-api</module>
+<module>city-parking-xxx-server</module>
 </modules>
 <build>
-    <plugins>
-        <!-- 根pom禁止发布到Maven私库 -->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-deploy-plugin</artifactId>
-            <configuration>
-                <skip>true</skip>
-            </configuration>
-        </plugin>
-    </plugins>
+<plugins>
+    <!-- 根pom禁止发布到Maven私库 -->
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+            <skip>true</skip>
+        </configuration>
+    </plugin>
+</plugins>
 </build>
 ```
 
@@ -1247,10 +1273,10 @@ private String remark;
 - 配置mainClass：`<mainClass>cn.city.parking.xxx.XxxApplication</mainClass>`
 - 配置maven-deploy-plugin：`<skip>true</skip>`
 - 创建配置文件（⚠️ 必须创建4个文件）：
-  - `bootstrap.yml`：主配置，使用`@profileActive@` + `${nacos.server-addr}`
-  - `bootstrap-dev.yml`：开发环境，使用`@serverAddr@`占位符
-  - `bootstrap-prod.yml`：生产环境，直接配置地址
-  - `bootstrap-test.yml`：测试环境，直接配置地址
+    - `bootstrap.yml`：主配置，使用`@profileActive@` + `${nacos.server-addr}`
+    - `bootstrap-dev.yml`：开发环境，使用`@serverAddr@`占位符
+    - `bootstrap-prod.yml`：生产环境，直接配置地址
+    - `bootstrap-test.yml`：测试环境，直接配置地址
 - 创建启动类：只需`@Slf4j` + `@SpringBootApplication`（⚠️ 不要添加@EnableDubbo等）
 - 创建Mapper、Service、DubboApi实现
 
