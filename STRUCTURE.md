@@ -50,6 +50,13 @@ city-parking-claude-doc/
 ├── open-claw/                         # OpenClaw 平台配置
 │   └── README.md                      # OpenClaw 说明（自托管 AI 助手网关）
 │
+├── mcp/                               # 精选 MCP Server 推荐
+│   ├── README.md                      # MCP 总入口与安装说明
+│   ├── playwright.md                  # Playwright — 浏览器自动化
+│   ├── fetch.md                       # Fetch — 网页内容抓取
+│   ├── mysql.md                       # MySQL — 数据库查询
+│   └── sequential-thinking.md         # Sequential Thinking — 结构化思考
+│
 └── skills/                            # 22 个技能包 + OpenClaw 参考资料
     ├── README.md                      # 技能包总入口
     ├── CATALOG.md                     # 技能包分类索引
@@ -85,4 +92,5 @@ city-parking-claude-doc/
 | global-settings/ | 全公司通用规范、命令、参考文档 | ~/.claude/ |
 | project-templates/ | 项目级 Claude 配置模板 | 项目根目录/ |
 | open-claw/ | OpenClaw 平台配置（自托管 AI 助手网关） | 按需 |
+| mcp/ | 精选 MCP Server 推荐与安装指南 | 参考文档（按需配置到 settings.json） |
 | skills/ | 可复用技能包 | ~/.claude/skills/ 或 项目/.claude/skills/ |

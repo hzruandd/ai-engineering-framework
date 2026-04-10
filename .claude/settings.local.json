@@ -1,7 +1,14 @@
 {
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "WebSearch",
+      "WebFetch(domain:mcpservers.org)",
+      "WebFetch(domain:mcp-hunt.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:playwright.dev)",
+      "WebFetch(domain:www.npmjs.com)"
     ]
   }
 }

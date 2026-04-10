@@ -22,6 +22,7 @@ city-parking-claude-doc/
 ├── project-templates/       # 项目级 Claude 配置模板
 ├── open-claw/               # OpenClaw 平台配置（自托管 AI 助手网关）
 ├── skills/                  # 22 个可复用技能包
+├── mcp/                     # 精选 MCP Server 推荐（4 个）
 ├── QUICKSTART.md            # 快速开始（5 分钟上手）
 ├── CONTRIBUTING.md          # 贡献指南（内容该放哪）
 ├── UPDATE.md                # 更新指南（如何同步最新配置）
@@ -101,6 +102,19 @@ Copy-Item -Recurse -Force global-settings\.claude $env:USERPROFILE\.claude
 | tzh-parkinglot | Spring Boot + Dubbo 微服务停车场系统 |
 
 详见 [project-templates/CATALOG.md](project-templates/CATALOG.md)
+
+### MCP 推荐（mcp/）
+
+4 个精选 MCP Server，扩展 Claude Code 的工具链：
+
+| MCP Server | 用途 |
+|------------|------|
+| Playwright | 浏览器自动化（页面操作、截图、表单） |
+| Fetch | 网页内容抓取（HTML 转 Markdown） |
+| MySQL | 数据库查询（Schema 浏览、SQL 执行） |
+| Sequential Thinking | 结构化思考（复杂问题分步推理） |
+
+详见 [mcp/README.md](mcp/README.md)
 
 ### OpenClaw（open-claw/）
 
