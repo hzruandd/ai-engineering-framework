@@ -17,9 +17,10 @@ best_for:
 scenarios:
   - "/tzh-review tapd=TAPD-123456"
   - "/tzh-review tapd=TAPD-123456,TAPD-123457 baseline=release/2026.05"
-  - "帮我评审当前分支代码，TAPD-123456"
-  - "生成停智慧代码评审报告，TAPD-123456"
-  - "检查这次 SQL 和数据库字段变更风险，TAPD-123456"
+  - "帮我评审当前分支代码，tapd=TAPD-123456"
+  - "生成停智慧代码评审报告，tapd=TAPD-123456"
+  - "检查这次 SQL 和数据库字段变更风险，tapd=TAPD-123456"
+  - "做一次上线前评审，tapd=TAPD-123456,TAPD-123457"
 ---
 
 # tzh-review
@@ -34,17 +35,38 @@ scenarios:
 - 不把数据库、SQL、索引、DDL、DML、报表口径等高风险改动降级处理。
 - 不预设“通过”，而是根据证据与风险作出结论。
 
+## Platform Compatibility
+
+本 Skill 的核心规则保持平台中性，可同时服务于 Claude Code 与 Codex：
+- 在支持自定义命令的平台中，可以通过薄 Command 触发，但 Command 只做入口。
+- 在不支持自定义命令的平台中，直接通过自然语言触发。
+- 核心门禁、评审流程、检查清单、模板、风险分级、数据库专项、TAPD 追踪逻辑全部只保留在本 Skill 中。
+
+## Fast Trigger
+
+遇到以下表达时，直接进入本 Skill：
+- 帮我评审当前分支代码
+- 生成代码评审报告
+- 提测前评审
+- 上线前评审
+- SQL 评审
+- 数据库变更评审
+- 索引评审
+- tzh-review
+
+如果缺少 TAPD，先询问 TAPD，并暂停，不做任何后续评审动作。
+
 ## Invocation
 
-以下两类触发都应进入本 Skill：
+以下触发都应进入本 Skill：
 
-1. 命令触发
+1. 支持命令的平台，可用命令触发
 - `/tzh-review`
 - `/tzh-review tapd=TAPD-123456`
 - `/tzh-review tapd=TAPD-123456 baseline=release/2026.05`
 - `/tzh-review tapd=TAPD-123456,TAPD-123457`
 
-2. 自然语言触发
+2. 所有平台均可用自然语言触发
 - 帮我评审当前分支代码
 - 生成停智慧代码评审报告
 - 做一次提测前评审
@@ -54,9 +76,30 @@ scenarios:
 - 做一次当前分支评审
 - tzh-review
 
-## Command Responsibility
+## Input Contract
 
-`/tzh-review` Command 只负责入口和参数透传，不保留核心逻辑。
+推荐输入字段：
+- `tapd`：必填，支持多个
+- `baseline`：可选，默认 `master`
+- `projects` 或 `services`：可选，用于显式指定项目或服务
+- `scope`：可选，例如 SQL、数据库、提测前、上线前
+
+可接受表达：
+- `TAPD-123456`
+- `tapd=TAPD-123456`
+- `tapd=TAPD-123456,TAPD-123457`
+- `baseline=release/2026.05`
+- `只看 SQL 风险`
+- `评审 order-service 和 billing-service`
+
+推荐自然语言写法：
+- `帮我评审当前分支代码，tapd=TAPD-123456`
+- `生成停智慧代码评审报告，tapd=TAPD-123456 baseline=master`
+- `检查这次 SQL 和字段变更风险，tapd=TAPD-123456`
+
+## Optional Command Responsibility
+
+如果当前平台支持 `/tzh-review` 这类自定义命令，则 Command 只负责入口和参数透传，不保留核心逻辑。
 
 必须遵守：
 - 评审流程、检查清单、风险分级、数据库专项、TAPD 追踪、多项目识别、报告模板均以本 Skill 为准。

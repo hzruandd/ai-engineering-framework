@@ -2,6 +2,11 @@
 
 `tzh-review` 用于在停智慧智慧停车生态平台场景下，对代码变更执行正式评审。它不是简单的 diff 总结，而是一套带强门禁的评审工作流：先核验 TAPD，再扫描变更，再做代码、数据库、测试、安全、部署回滚评审，最后输出正式报告与放行结论。
 
+这份 Skill 设计为一套可兼容 Claude Code 与 Codex 的共享核心：
+- Claude Code 可通过薄 Command 或自然语言触发。
+- Codex 可通过自然语言、路由规则或全局 Skill 触发。
+- 无论在哪个平台，核心评审逻辑都以 Skill 为准。
+
 ## 适用场景
 
 - 提测前代码评审
@@ -14,7 +19,7 @@
 
 ## 触发方式
 
-1. 命令触发
+1. 支持命令的平台，可用命令触发
 
 ```text
 /tzh-review tapd=TAPD-123456
@@ -22,14 +27,31 @@
 /tzh-review tapd=TAPD-123456 baseline=release/2026.05
 ```
 
-2. 自然语言触发
+2. 所有平台均可用自然语言触发
 
 ```text
-帮我评审当前分支代码，TAPD-123456
-生成停智慧代码评审报告，TAPD-123456
-检查这次 SQL 和数据库字段变更风险，TAPD-123456
-做一次上线前评审，TAPD-123456,TAPD-123457
+帮我评审当前分支代码，tapd=TAPD-123456
+生成停智慧代码评审报告，tapd=TAPD-123456
+检查这次 SQL 和数据库字段变更风险，tapd=TAPD-123456
+做一次上线前评审，tapd=TAPD-123456,TAPD-123457
 ```
+
+## 推荐输入契约
+
+推荐用户尽量用“自然语言 + 参数化字段”的方式输入，这样在 Claude Code 和 Codex 上都更稳定：
+
+```text
+帮我评审当前分支代码，tapd=TAPD-123456
+生成停智慧代码评审报告，tapd=TAPD-123456 baseline=release/2026.05
+检查这次 SQL 风险，tapd=TAPD-123456 scope=sql
+帮我评审 order-service 和 billing-service，tapd=TAPD-123456,TAPD-123457
+```
+
+推荐字段：
+- `tapd`：必填
+- `baseline`：可选，默认 `master`
+- `scope`：可选
+- `projects` 或 `services`：可选
 
 ## 强门禁
 
@@ -71,17 +93,18 @@
 ## 目录结构
 
 ```text
-.claude/
-├── commands/
-│   └── tzh-review.md
-└── skills/
-    └── tzh-review/
-        ├── SKILL.md
-        ├── README.md
-        ├── templates/
-        ├── checklists/
-        └── examples/
+tzh-review/
+├── SKILL.md
+├── README.md
+├── templates/
+├── checklists/
+└── examples/
 ```
+
+平台入口可以不同，但 Skill 目录内容应保持一致：
+- Claude Code 可搭配 `.claude/commands/tzh-review.md`
+- Codex 可安装到 `.codex/skills/tzh-review`
+- 核心逻辑不要分叉到多个平台专属版本
 
 ## 推荐使用流程
 
