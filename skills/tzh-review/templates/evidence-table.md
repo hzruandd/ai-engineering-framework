@@ -11,7 +11,7 @@
 | MQ-01 | MQ | Inferred |  |  |  |  |
 | JOB-01 | JOB | Inferred |  |  |  |  |
 | TEST-01 | TEST | Observed |  |  |  |  |
-| SONAR-01 | SONAR | Unknown |  |  |  |  |
+| SONAR-01 | SONAR | Unknown |  |  | 静态扫描结果（可选） |  |
 | LOG-01 | LOG | Inferred |  |  |  |  |
 
 ## 使用规则
