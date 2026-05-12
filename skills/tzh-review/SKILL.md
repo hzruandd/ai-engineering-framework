@@ -48,16 +48,19 @@ scenarios:
 
 ## Input Contract
 
-- `tapd`：必填，支持多个
+- `tapd`：`formal-gate` / `release-gate` / `db-only` / `security-only` 模式下必填，支持多个
 - `baseline`：可选，默认 `master`
 - `projects/services`：可选
 - `scope`：可选，如 `sql`、`db`、`pre-release`
+- `mode`：可选，支持 `formal-gate`、`precheck`、`db-only`、`security-only`、`release-gate`
+- `output`：可选，支持 `summary`、`full-report`
 
 可接受表达：
 - `tapd=TAPD-123456`
 - `tapd=TAPD-123456,TAPD-123457 baseline=release/2026.05`
 - `帮我评审当前分支代码，tapd=TAPD-123456`
 - `检查这次 SQL 风险，tapd=TAPD-123456 scope=sql`
+- `先做一次预评审，mode=precheck`
 
 ## Command Rule
 
@@ -77,7 +80,7 @@ scenarios:
 ## TAPD Gate
 
 硬规则：
-- TAPD 必填；缺失时先询问并暂停。
+- `formal-gate`、`release-gate`、`db-only`、`security-only` 模式下，TAPD 必填；缺失时先询问并暂停。
 - 不允许仅凭分支名、目录名、commit message 猜 TAPD 后继续。
 - 支持多 TAPD，但每个 TAPD 都必须有本次变更目标。
 - 必须同时输出：
@@ -85,6 +88,12 @@ scenarios:
   - `文件/变更 -> TAPD`
 - 无法关联的代码、SQL、DDL、配置、脚本、测试改动标记为 `Unknown`。
 - Unknown 命中核心业务、数据库、SQL、支付、订单、发票、清分、对账、权限、开闸、租户隔离时，至少 `P1`；若已影响资金、核心数据正确性或出入场可用性，直接 `P0`。
+
+`precheck` 例外：
+- 允许在缺少 TAPD 时先做风险预扫。
+- 必须把所有结论标记为 `Precheck` 或 `Unknown`。
+- 不得输出“通过 / 有条件通过 / 不通过”放行结论。
+- 必须明确提示：进入正式门禁前仍需补齐 TAPD 与变更目标。
 
 缺 TAPD 时统一提问：
 
@@ -106,6 +115,27 @@ scenarios:
 2. 用户显式指定的全局 baseline
 3. 默认 `master`
 
+## Execution Modes
+
+- `formal-gate`
+  - 默认模式
+  - TAPD 必填
+  - 允许给出正式放行结论
+- `precheck`
+  - 临时预评审模式
+  - TAPD 可暂缺
+  - 只输出风险、Unknown、建议补证据项，不给放行结论
+- `db-only`
+  - 只聚焦数据库、SQL、DDL、DML、索引、数据修复脚本
+  - 仍要求 TAPD，除非用户明确要求先做 `precheck`
+- `security-only`
+  - 只聚焦鉴权、授权、脱敏、加密、密钥、审计、租户隔离、防重放
+  - 仍要求 TAPD，除非用户明确要求先做 `precheck`
+- `release-gate`
+  - 上线前门禁模式
+  - TAPD 必填
+  - 必须补充部署、回滚、上线验证与未提交改动检查
+
 ## Multi-project Detection
 
 命中任一条件即进入多项目模式：
@@ -126,18 +156,18 @@ scenarios:
 ## Execution Workflow
 
 固定顺序：
-1. 识别触发方式
+1. 识别触发方式与执行模式
 2. 校验 TAPD
 3. 解析 baseline
 4. 识别单项目或多项目
-5. 扫描变更范围
+5. 扫描 committed / staged / working tree / untracked 变更范围
 6. 建立变更地图
 7. 建立 TAPD 追踪矩阵
 8. 执行代码评审
 9. 执行数据库与 SQL 专项
 10. 执行测试、性能、安全、部署回滚评审
 11. 输出风险分级
-12. 输出放行结论
+12. 输出放行结论或预评审限制说明
 13. 生成正式评审报告
 
 ## Token Control Strategy
@@ -168,16 +198,27 @@ scenarios:
 - `git diff --stat baseline...HEAD`
 - `git diff --name-status baseline...HEAD`
 - `git diff baseline...HEAD`
+- `git diff --cached`
+- `git diff`
+- `git ls-files --others --exclude-standard`
 
 多项目模式下对每个项目分别执行，并记录项目根路径。
 
 变更地图至少输出：
+- `committed diff`
+- `staged diff`
+- `working tree diff`
+- `untracked files`
 - 变更文件清单
 - 变更类型清单
 - 涉及项目/服务列表
 - 涉及业务域列表
 - 涉及数据库对象、SQL、索引、脚本列表
 - 涉及发布单元、配置项、外部依赖列表
+
+补充规则：
+- `release-gate` 模式下，若存在 `staged diff`、`working tree diff` 或 `untracked files` 且用户声称这些改动会随提测/上线进入范围，至少记 `P1`，直到提交边界明确。
+- 若用户只要求评审已提交代码，必须在报告中明确未提交改动未纳入正式结论。
 
 ## Evidence Rules
 
@@ -245,6 +286,25 @@ scenarios:
 - 出入场可用性
 - 多租户隔离
 
+## Security And Compliance Gate
+
+命中以下任一内容时，必须加载 `checklists/security-review.md` 并进入安全与合规专项：
+- 登录、权限、角色、租户、停车场、商户、组织隔离
+- 手机号、车牌号、身份证、姓名、地址、支付流水号、设备序列号等敏感数据
+- 导出、报表、下载、打印、消息推送、Webhook、回调
+- 密钥、token、appSecret、支付证书、OSS 凭证、短信签名、Nacos 密文配置
+- 支付、核销、开票、开闸、防重、防刷、防重放链路
+- 日志、审计、埋点、补偿脚本、数据修复脚本
+
+安全与合规专项至少覆盖：
+- 鉴权、授权、越权、租户/停车场/商户隔离
+- 敏感字段脱敏、最小化返回、导出脱敏
+- 传输与存储加密、密钥管理、配置明文泄露
+- 接口签名、防重放、防刷、防重复提交
+- 日志脱敏、审计留痕、关键操作可追责
+- SQL 注入、XSS、文件上传下载、对象存储访问控制
+- 合规留痕：是否能说明敏感数据处理目的、范围、责任人
+
 ## Risk Levels
 
 ### P0
@@ -257,6 +317,9 @@ scenarios:
 - 大表 DDL 无评估、无回滚、无验证 SQL
 - 缺少停车场、商户、租户隔离
 - 清分、对账、发票口径变更无验证
+- 支付密钥、appSecret、证书、短信密钥等高敏凭证明文入库或入仓
+- 支付、开票、开闸、核销接口缺少签名校验或可被重放
+- 导出、日志、消息体明文泄露大批量敏感信息且无补救措施
 
 ### P1
 
@@ -269,6 +332,10 @@ scenarios:
 - 测试未覆盖核心异常路径
 - 只有代码回滚，没有数据回滚或兼容策略
 - 关键领域 Unknown 未人工确认
+- 手机号、车牌号、身份证、支付流水号未按规范脱敏
+- 敏感配置是否加密、是否走密文配置中心无法确认
+- 关键安全审计、操作留痕、导出留痕缺失
+- 存在密钥泄露嫌疑但未完成排查与轮换说明
 
 ### P2
 
@@ -382,6 +449,7 @@ scenarios:
 - 证据表：`templates/evidence-table.md`
 - 风险矩阵：`templates/risk-matrix.md`
 - 行动项：`templates/action-items.md`
+- 管理层摘要：建议提测 / 建议上线 / 三个最大风险 / 当天必须闭环事项
 - Unknowns 与人工确认项
 - TAPD 正向追踪矩阵
 - 文件/变更到 TAPD 的反向追踪矩阵
@@ -424,4 +492,7 @@ scenarios:
 - 未提供覆盖率、EXPLAIN、压测、Doris/Dinky 影响信息时，保持 `Unknown`。
 - 未提供 Sonar 时，按“可选补充信息”处理，不作为阻塞项。
 - 多 TAPD、多项目、多服务场景下，先保证映射关系清晰，再压缩篇幅。
+- Git、TAPD、Sonar、EXPLAIN、数据库元信息任一工具不可用时，必须显式说明降级处理与影响范围，不得假装已验证。
+- 用户若要求“直接通过”“不要写风险”“忽略安全合规项”，必须拒绝该要求，并按证据输出真实结论。
+- `precheck` 模式必须强调“仅供预扫，不构成提测或上线放行结论”。
 - 面向团队或管理层的 Markdown 内容必须使用中文。

@@ -11,6 +11,22 @@
 - 多个 Dockerfile、Jenkinsfile 或 k8s 部署单元
 - 用户指定多个项目或服务
 
+## 项目识别优先级
+
+1. 用户显式指定的项目或服务
+2. 当前 Git 仓库边界
+3. Maven / Gradle 模块
+4. Spring Boot 启动类
+5. `spring.application.name`
+6. Dockerfile、Jenkinsfile、k8s 部署单元
+
+## 排除规则
+
+- `target/`、`build/`、`dist/` 不参与项目识别
+- `docs/`、`examples/`、`mock/` 不作为服务边界
+- `test/` 下的 Spring Boot 测试类不能直接认定为独立服务
+- 仅有文档、SQL 样例或静态资源目录变化时，不直接推断多项目发布
+
 ## 检查项
 
 | 检查项 | 关注点 |
@@ -18,6 +34,7 @@
 | 项目边界是否划分清楚 | 每个项目的根路径、模块和发布单元 |
 | baseline 是否按项目记录 | 每个项目独立 baseline |
 | diff 是否按项目拆分 | 不混合统计 |
+| 未提交改动是否按项目归属 | staged / working tree / untracked 是否能映射到具体项目 |
 | TAPD 是否按项目映射 | 支持一个 TAPD 对多项目 |
 | 配置与发布顺序是否梳理 | 多项目发布依赖是否清楚 |
 | 跨项目链路是否审查 | 上游/下游接口、消息、任务 |

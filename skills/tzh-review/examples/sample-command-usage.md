@@ -38,3 +38,22 @@
 含义：
 - 进入多项目模式
 - 每个项目可以使用不同 baseline
+
+## 预评审模式
+
+```text
+/tzh-review mode=precheck output=summary
+```
+
+含义：
+- 允许在未整理 TAPD 时先做风险预扫
+- 只能输出风险和补证据建议，不能直接给放行结论
+
+## 安全专项
+
+```text
+/tzh-review tapd=TAPD-123456 mode=security-only
+```
+
+含义：
+- 只聚焦脱敏、加密、密钥、权限、防重放、审计与租户隔离

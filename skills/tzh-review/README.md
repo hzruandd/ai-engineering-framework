@@ -48,10 +48,12 @@
 ```
 
 推荐字段：
-- `tapd`：必填
+- `tapd`：正式门禁必填
 - `baseline`：可选，默认 `master`
 - `scope`：可选
 - `projects` 或 `services`：可选
+- `mode`：可选，支持 `formal-gate`、`precheck`、`db-only`、`security-only`、`release-gate`
+- `output`：可选，支持 `summary`、`full-report`
 
 ## 强门禁
 
@@ -60,6 +62,10 @@
 - 未提供 TAPD 编号时，必须先补 TAPD，评审暂停。
 - 不允许仅凭分支名或 commit message 猜测 TAPD 并继续。
 - 支持多个 TAPD，但每个 TAPD 都要对应本次变更目标。
+
+补充说明：
+- 默认 `formal-gate` 模式下，以上规则严格执行。
+- 若用户明确要求 `mode=precheck`，可先做风险预扫，但不得给出放行结论。
 
 ### 2. baseline 默认 `master`
 
@@ -78,9 +84,15 @@
 - 多个 Dockerfile、Jenkinsfile、k8s 部署单元
 - 用户一次性点名多个项目或服务
 
+### 4. 未提交改动必须显式识别
+
+- 除 `baseline...HEAD` 外，还要检查 `staged diff`、`working tree diff`、`untracked files`。
+- `release-gate` 模式下，如果未提交改动也被用户纳入提测或上线范围，至少标为 `P1`，直到提交边界清晰。
+
 ## 输出内容
 
 评审结束后，至少应输出：
+- 管理层摘要
 - 正式评审报告
 - TAPD 追踪矩阵
 - 文件/变更到 TAPD 的反向追踪矩阵
@@ -121,6 +133,24 @@
 - `template`：固定输出骨架
 - `gate checklist`：快速判断是否要进入专项
 - `deep checklist`：只有命中专项才加载
+
+## 执行模式
+
+- `formal-gate`
+  - 默认正式评审模式
+  - TAPD 必填
+  - 输出正式结论
+- `precheck`
+  - 临时预评审
+  - TAPD 可暂缺
+  - 只给风险与补证据建议，不给放行结论
+- `db-only`
+  - 聚焦数据库、SQL、DDL、DML、索引与修复脚本
+- `security-only`
+  - 聚焦脱敏、加密、密钥、审计、权限、防重放、租户隔离
+- `release-gate`
+  - 上线前门禁
+  - 强制补充部署、回滚、上线验证和未提交改动边界
 
 ## 静态扫描策略
 
@@ -188,9 +218,10 @@ tzh-review/
 
 1. 提供 TAPD 编号与本次变更目标。
 2. 如有非 `master` 基线，显式说明 baseline。
-3. 让 `tzh-review` 自动识别单项目或多项目模式。
-4. 基于正式报告模板输出评审结果。
-5. 根据行动项闭环后，再决定是否放行。
+3. 如只是临时预扫，可显式指定 `mode=precheck`。
+4. 让 `tzh-review` 自动识别单项目或多项目模式，并区分 committed / staged / working tree / untracked。
+5. 基于正式报告模板输出评审结果。
+6. 根据行动项闭环后，再决定是否放行。
 
 ## 何时一定要走数据库专项
 
@@ -213,5 +244,7 @@ tzh-review/
 - 禁止为了报告好看降低风险等级。
 - P0 一律不通过。
 - 未闭环 P1 不得直接通过。
+- `precheck` 不得输出“通过 / 有条件通过 / 不通过”。
+- 涉及手机号、车牌号、身份证、支付流水号、密钥、证书、日志导出、回调签名时，必须进入安全与合规专项。
 - 未提供 Sonar 时，按可选补充信息处理，不作为阻塞项。
 - 未提供覆盖率、EXPLAIN、回滚脚本等证据时，应保持 Unknown，而不是代写“达标”。
