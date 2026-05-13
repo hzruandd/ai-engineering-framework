@@ -48,24 +48,23 @@
 ```
 
 推荐字段：
-- `tapd`：正式门禁必填
+- `tapd`：必填
 - `baseline`：可选，默认 `master`
 - `scope`：可选
 - `projects` 或 `services`：可选
-- `mode`：可选，支持 `formal-gate`、`precheck`、`db-only`、`security-only`、`release-gate`
+- `mode`：可选，支持 `formal-gate`、`db-only`、`security-only`、`release-gate`
 - `output`：可选，支持 `summary`、`full-report`
+- `overwrite`：可选，支持 `overwrite=true` 或 `output.overwrite=true`
 
 ## 强门禁
 
 ### 1. TAPD 必填
 
-- 未提供 TAPD 编号时，必须先补 TAPD，评审暂停。
+- 未提供 TAPD 编号时，必须先补 TAPD，正式评审暂停。
 - 不允许仅凭分支名或 commit message 猜测 TAPD 并继续。
 - 支持多个 TAPD，但每个 TAPD 都要对应本次变更目标。
-
-补充说明：
-- 默认 `formal-gate` 模式下，以上规则严格执行。
-- 若用户明确要求 `mode=precheck`，可先做风险预扫，但不得给出放行结论。
+- 如果只给 TAPD 编号、未给本次变更目标，正式门禁必须继续追问。
+- 若根据代码或上下文推断 TAPD 目标，必须标记为 `Inferred`。
 
 ### 2. baseline 默认 `master`
 
@@ -109,7 +108,8 @@
 - 默认示例：`智慧停车生态_代码评审报告_v1.4_2026-05-09.md`
 - 不再默认使用 `TAPD1003440`、`by_codex`、`by_cc`、分支名、评审人等附加后缀
 - 除非用户明确要求其他命名方式，否则统一按该文件名输出
-- 若同一路径下同日期文件已存在，默认覆盖同名文件；如果需要保留多份，由用户显式指定新文件名或输出目录
+- 同名文件只有在用户显式传入 `overwrite=true` 或 `output.overwrite=true` 时才允许覆盖
+- 未显式允许覆盖时，不得静默覆盖；优先自动追加 `_1`、`_2`、`_3` 等后缀
 
 ## 格式稳定性要求
 
@@ -140,14 +140,12 @@
   - 默认正式评审模式
   - TAPD 必填
   - 输出正式结论
-- `precheck`
-  - 临时预评审
-  - TAPD 可暂缺
-  - 只给风险与补证据建议，不给放行结论
 - `db-only`
   - 聚焦数据库、SQL、DDL、DML、索引与修复脚本
+  - 仍需记录由数据库变更直接引发的业务、测试、发布、回滚、对账与报表同步风险
 - `security-only`
   - 聚焦脱敏、加密、密钥、审计、权限、防重放、租户隔离
+  - 仍需记录由安全变更直接引发的可用性、误拦截、运营后台、合规、发布与回滚风险
 - `release-gate`
   - 上线前门禁
   - 强制补充部署、回滚、上线验证和未提交改动边界
@@ -218,7 +216,7 @@ tzh-review/
 
 1. 提供 TAPD 编号与本次变更目标。
 2. 如有非 `master` 基线，显式说明 baseline。
-3. 如只是临时预扫，可显式指定 `mode=precheck`。
+3. 如需专项评审，可显式指定 `mode=db-only`、`mode=security-only` 或 `mode=release-gate`。
 4. 让 `tzh-review` 自动识别单项目或多项目模式，并区分 committed / staged / working tree / untracked。
 5. 基于正式报告模板输出评审结果。
 6. 根据行动项闭环后，再决定是否放行。
@@ -244,7 +242,8 @@ tzh-review/
 - 禁止为了报告好看降低风险等级。
 - P0 一律不通过。
 - 未闭环 P1 不得直接通过。
-- `precheck` 不得输出“通过 / 有条件通过 / 不通过”。
+- 大 diff、工具失败、baseline 不存在或关键证据缺失时，不得因为上下文或 token 限制直接给“通过”。
 - 涉及手机号、车牌号、身份证、支付流水号、密钥、证书、日志导出、回调签名时，必须进入安全与合规专项。
+- 评审输出中的敏感证据必须脱敏，只允许展示掩码值。
 - 未提供 Sonar 时，按可选补充信息处理，不作为阻塞项。
 - 未提供覆盖率、EXPLAIN、回滚脚本等证据时，应保持 Unknown，而不是代写“达标”。

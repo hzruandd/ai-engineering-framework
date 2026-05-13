@@ -32,22 +32,22 @@
 ## 多项目、多 TAPD
 
 ```text
-/tzh-review tapd=TAPD-123456,TAPD-123457 order-service:baseline=release/2026.05 billing-service:baseline=master
+/tzh-review tapd=TAPD-123456,TAPD-123457 projects=order-service,billing-service baseline=release/2026.05
 ```
 
 含义：
 - 进入多项目模式
-- 每个项目可以使用不同 baseline
+- 由 Skill 继续识别每个项目的实际 diff 与风险边界
 
-## 预评审模式
+## 完整报告并显式允许覆盖
 
 ```text
-/tzh-review mode=precheck output=summary
+/tzh-review tapd=TAPD-123456 output=full-report overwrite=true
 ```
 
 含义：
-- 允许在未整理 TAPD 时先做风险预扫
-- 只能输出风险和补证据建议，不能直接给放行结论
+- 生成完整正式评审报告
+- 如果同名文件已存在，允许由 Skill 按覆盖策略处理
 
 ## 安全专项
 
