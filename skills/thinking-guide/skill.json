@@ -1,0 +1,7 @@
+{
+  "name": "thinking-guide",
+  "description": "Sequential Thinking 工具使用指南",
+  "version": "1.0.0",
+  "userInvocable": true,
+  "autoLoadConditions": []
+}

@@ -1,153 +1,96 @@
 # 目录结构说明
 
-本仓库用于管理 City Parking 项目的 Claude Code 配置文件和文档。
-
-## 目录结构
+> 反映仓库实际磁盘结构（2026-04-08 更新）
 
 ```
 city-parking-claude-doc/
-├── README.md                    # 项目总体说明
-├── STRUCTURE.md                 # 本文件，目录结构说明
-├── global-settings/             # 全局通用配置
-│   ├── README.md                # 全局配置说明
-│   └── .claude/                 # Claude 全局配置文件
-│       ├── CLAUDE.md            # 项目级规范（完整版）
-│       ├── commands/            # 自定义快捷命令
-│       ├── docs/                # 详细文档
-│       │   ├── architecture/    # 架构设计文档
-│       │   ├── design/          # 设计规范
-│       │   ├── examples/        # 实战案例
-│       │   └── guides/          # 开发指南
-│       ├── ignore               # 忽略文件配置
-│       ├── settings.local.json  # 本地设置
-│       ├── README.md            # .claude目录说明
-│       └── analyze_slow_queries.py  # Doris慢查询分析工具
-└── project-templates/           # 项目模板
-    ├── README.md                # 模板说明
-    └── tzh-parkinglot/          # 停车场项目模板
-        └── .claude/             # 项目特定配置
-            ├── CLAUDE.md        # 项目级配置
-            └── skills/          # 业务技能文档
-
-## 使用说明
-
-### 1. 全局配置（global-settings）
-
-**用途**：所有 City Parking 微服务项目通用的开发规范和规则
-
-**包含内容**：
-- 编码规范（Java、数据库、前端等）
-- 框架核心规范（Spring Boot、Dubbo、MyBatis Plus）
-- 设计原则（SOLID）
-- 架构设计文档
-- 开发指南和最佳实践
-- 自定义快捷命令（/new-crud、/add-field 等）
-
-**如何使用**：
-```bash
-# 方式1：复制到 ~/.claude/（全局生效）
-cp -r global-settings/.claude/* ~/.claude/
-
-# 方式2：复制到具体项目（项目级生效）
-cp -r global-settings/.claude /path/to/your/project/
+│
+├── README.md                          # 仓库总入口
+├── QUICKSTART.md                      # 快速开始（5 分钟上手）
+├── CONTRIBUTING.md                    # 贡献指南
+├── UPDATE.md                          # 更新指南
+├── CHANGELOG.md                       # 变更记录
+├── STRUCTURE.md                       # 本文件
+├── MIGRATION_REPORT.md                # 本次改造报告
+│
+├── global-settings/                   # 全局配置（成熟资产）
+│   ├── README.md                      # 全局配置说明
+│   └── .claude/
+│       ├── CLAUDE.md                  # 核心规范（52KB，13 模块）
+│       ├── settings.local.json        # 本地设置
+│       ├── ignore                     # 忽略规则
+│       ├── analyze_slow_queries.py    # Doris 慢查询分析脚本
+│       ├── commands/                  # 10 个快捷命令
+│       │   ├── add-field.md
+│       │   ├── analyze-slow-query.md
+│       │   ├── design-doc.md
+│       │   ├── diff-report.md
+│       │   ├── fix-cache.md
+│       │   ├── formal-review.md
+│       │   ├── generate-tests.md
+│       │   ├── new-api.md
+│       │   ├── new-crud.md
+│       │   └── review-code.md
+│       └── docs/                      # 参考文档
+│           ├── architecture/          # 架构设计（6 篇）
+│           ├── design/                # 设计规范（1 篇）
+│           ├── examples/              # 实战案例（5 篇）
+│           └── guides/                # 开发指南（5 篇）
+│
+├── project-templates/                 # 项目配置模板
+│   ├── README.md                      # 模板使用说明
+│   ├── CATALOG.md                     # 模板清单
+│   └── tzh-parkinglot/               # 停车场管理系统模板
+│       ├── CLAUDE.md                  # 项目级配置
+│       └── .claude/
+│           ├── settings.local.json
+│           └── skills/
+│               └── parking-in-out/    # 出入车业务 Skill
+│
+├── open-claw/                         # OpenClaw 平台配置
+│   └── README.md                      # OpenClaw 说明（自托管 AI 助手网关）
+│
+├── mcp/                               # 精选 MCP Server 推荐
+│   ├── README.md                      # MCP 总入口与安装说明
+│   ├── playwright.md                  # Playwright — 浏览器自动化
+│   ├── fetch.md                       # Fetch — 网页内容抓取
+│   ├── mysql.md                       # MySQL — 数据库查询
+│   └── sequential-thinking.md         # Sequential Thinking — 结构化思考
+│
+└── skills/                            # 22 个技能包 + OpenClaw 参考资料
+    ├── README.md                      # 技能包总入口
+    ├── CATALOG.md                     # 技能包分类索引
+    ├── add-field/                     # 添加字段
+    ├── algorithmic-art/               # 算法艺术
+    ├── canvas-design/                 # 视觉设计
+    ├── diff-report/                   # 修改报告
+    ├── doc-coauthoring/               # 文档协作
+    ├── docx/                          # Word 操作
+    ├── fix-cache/                     # 缓存修复
+    ├── frontend-design/               # 前端设计
+    ├── generate-tests/                # 测试生成
+    ├── java-guide/                    # Java 开发规范
+    ├── mcp-builder/                   # MCP 构建
+    ├── new-api/                       # 添加接口
+    ├── new-crud/                      # CRUD 生成
+    ├── openclaw/                      # OpenClaw Agent 开发参考资料（非 Skill）
+    ├── pdf/                           # PDF 操作
+    ├── pptx/                          # PPT 操作
+    ├── review-code/                   # 代码审查
+    ├── self-test/                     # 自动化自测
+    ├── skill-creator/                 # Skill 创建工具
+    ├── theme-factory/                 # 主题工厂
+    ├── thinking-guide/                # 思维引导
+    ├── webapp-testing/                # Web 测试
+    └── xlsx/                          # Excel 操作
 ```
 
-### 2. 项目模板（project-templates）
+## 目录职责
 
-**用途**：特定业务项目的配置模板
-
-**包含内容**：
-- 项目特定的业务规范
-- Skills 技能文档（业务流程、方法索引）
-- 项目级的 CLAUDE.md 配置
-
-**如何使用**：
-```bash
-# 复制模板到新项目
-cp -r project-templates/tzh-parkinglot/.claude /path/to/new/project/
-
-# 根据实际业务修改配置
-cd /path/to/new/project/.claude
-# 编辑 CLAUDE.md 和 skills 文档
-```
-
-## 配置优先级
-
-Claude Code 读取配置的优先级（从高到低）：
-
-1. **项目级配置**：项目根目录的 `.claude/CLAUDE.md`
-2. **全局配置**：`~/.claude/CLAUDE.md`
-
-**推荐策略**：
-- 通用规范放在全局配置（`~/.claude/`）
-- 项目特定规范放在项目配置（项目根目录的 `.claude/`）
-
-## 文件说明
-
-### 核心配置文件
-
-| 文件 | 说明 |
-|------|------|
-| `CLAUDE.md` | Claude Code 的主配置文件，定义开发规范和约束 |
-| `ignore` | 指定 Claude Code 应该忽略的文件和目录 |
-| `settings.local.json` | 本地设置（如模型选择、代理配置） |
-
-### 文档目录
-
-| 目录 | 说明 |
-|------|------|
-| `docs/architecture/` | 架构设计文档（缓存、分布式事务、线程池等） |
-| `docs/design/` | 设计规范（状态码规范等） |
-| `docs/examples/` | 实战案例（CRUD、缓存、批量操作等） |
-| `docs/guides/` | 开发指南（编码前检查、详细规范等） |
-| `commands/` | 自定义快捷命令（/new-crud、/add-field 等） |
-| `skills/` | 业务技能文档（项目特定） |
-
-## 维护指南
-
-### 更新全局配置
-
-当需要更新通用规范时：
-1. 修改 `global-settings/.claude/CLAUDE.md` 或相关文档
-2. 提交到 Git 仓库
-3. 通知团队成员更新本地配置：
-   ```bash
-   git pull
-   cp -r global-settings/.claude/* ~/.claude/
-   ```
-
-### 创建新项目模板
-
-当需要为新业务线创建模板时：
-1. 在 `project-templates/` 下创建新目录
-2. 复制并修改 `tzh-parkinglot` 模板
-3. 编写项目特定的 CLAUDE.md 和 skills 文档
-4. 更新 `project-templates/README.md`
-
-### 文档维护原则
-
-**核心原则**：代码和文档同步更新
-
-**何时必须更新文档**：
-- 业务逻辑变更 → 更新 skills reference 文档
-- 代码结构变更 → 更新方法索引和位置
-- 配置规则变更 → 更新配置说明
-- 框架升级 → 更新 CLAUDE.md 架构说明
-
-详见：[文档维护规范](global-settings/.claude/CLAUDE.md#文档维护规范)
-
-## 相关链接
-
-- [全局配置说明](global-settings/README.md)
-- [项目模板说明](project-templates/README.md)
-- [City Parking 框架核心规范](global-settings/.claude/CLAUDE.md)
-- [Claude Code 官方文档](https://docs.anthropic.com/claude/docs)
-
-## 版本历史
-
-- **2025-01-13**：合并 `.claude` 和 `claude-settings` 目录，统一为新结构
-- **2025-01-12**：初始版本
-
-## 联系方式
-
-如有问题或建议，请联系架构组。
+| 目录 | 职责 | 安装位置 |
+|------|------|----------|
+| global-settings/ | 全公司通用规范、命令、参考文档 | ~/.claude/ |
+| project-templates/ | 项目级 Claude 配置模板 | 项目根目录/ |
+| open-claw/ | OpenClaw 平台配置（自托管 AI 助手网关） | 按需 |
+| mcp/ | 精选 MCP Server 推荐与安装指南 | 参考文档（按需配置到 settings.json） |
+| skills/ | 可复用技能包 | ~/.claude/skills/ 或 项目/.claude/skills/ |
