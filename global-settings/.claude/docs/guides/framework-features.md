@@ -118,10 +118,10 @@ id-random: false  # 默认false
 
 ## 5. 批量操作（CustomSqlInjector）
 
-框架注入了**批量插入方法**，Mapper继承BaseMapper即可使用：
+框架注入了**批量插入方法**，Mapper继承CommonMapper即可使用：
 
 ```java
-public interface UserMapper extends BaseMapper<User> {
+public interface UserMapper extends CommonMapper<User> {
     // 无需定义，框架自动注入
 }
 

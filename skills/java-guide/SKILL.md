@@ -24,7 +24,7 @@ context: inline
 - Spring Boot、Spring Cloud Alibaba
 - Dubbo、DubboService、DubboReference
 - Nacos、注册中心、配置中心
-- MyBatis Plus、BaseMapper
+- MyBatis Plus、CommonMapper
 - Redis、Lettuce
 
 ### 操作关键词
@@ -49,7 +49,7 @@ context: inline
 - 实体类规范（BusinessEntity、@TableName、字段填充）
 - DubboApi/Controller 规范（薄层原则、职责边界）
 - Service 规范（继承 IService、事务控制）
-- Mapper 规范（继承 BaseMapper、批量操作）
+- Mapper 规范（继承 CommonMapper、批量操作）
 - 启动类规范（必需注解、可选注解）
 - 日志规范（日志级别、敏感信息脱敏）
 - Redis 使用规范（缓存策略、分布式锁）

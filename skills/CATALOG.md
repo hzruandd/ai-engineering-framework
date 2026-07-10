@@ -1,6 +1,6 @@
 # Skills 分类索引
 
-> 22 个技能包，按用途分类。每个 Skill 目录下的 SKILL.md 包含详细说明和触发条件。
+> 27 个技能包，按用途分类。每个 Skill 目录下的 SKILL.md 包含详细说明和触发条件。
 
 ## 工程研发
 
@@ -11,8 +11,19 @@
 | [add-field](add-field/) | 为实体类添加新字段 | 扩展已有实体 |
 | [new-api](new-api/) | 在已有模块添加新接口 | 扩展 API 功能 |
 | [fix-cache](fix-cache/) | 添加或修复缓存 | 缓存相关问题 |
+| [pre-coding-check](pre-coding-check/) | 编码前校验 PRD、设计、接口、数据库和测试策略 | 编码前门禁 |
+| [deliver-requirement](deliver-requirement/) | 端到端需求交付总控 | 从需求继续交付 |
+| [new-bff](new-bff/) | 新增或修改 BFF API | Controller、VO、DubboReference、OpenAPI |
+| [new-page](new-page/) | 新增或修改前端页面 | Vue/TypeScript/小程序页面 |
 | [mcp-builder](mcp-builder/) | MCP Server 构建指南 | 构建 MCP 集成 |
 | [frontend-design](frontend-design/) | 前端界面设计 | 构建 Web 组件/页面 |
+
+## 需求与设计
+
+| Skill | 说明 | 触发场景 |
+|-------|------|----------|
+| [prd-authoring](prd-authoring/) | 编写停智慧结构化 PRD | 原始需求转 PRD、补验收标准 |
+| [doc-coauthoring](doc-coauthoring/) | 文档协作编写 | 协作写文档/提案/技术规格 |
 
 ## 质量保障
 
@@ -32,7 +43,6 @@
 | [pptx](pptx/) | PPT 创建/编辑 | 涉及 .pptx 文件 |
 | [docx](docx/) | Word 创建/编辑 | 涉及 .docx 文件 |
 | [xlsx](xlsx/) | Excel 创建/编辑 | 涉及 .xlsx/.csv 文件 |
-| [doc-coauthoring](doc-coauthoring/) | 文档协作编写 | 协作写文档/提案/技术规格 |
 
 ## 设计创意
 

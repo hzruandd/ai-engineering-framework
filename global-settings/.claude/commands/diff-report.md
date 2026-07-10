@@ -210,7 +210,7 @@ git diff master...HEAD
 #### 5. 测试覆盖 🧪
 
 - [ ] 是否有单元测试
-- [ ] 测试覆盖率是否达标（>=70%）
+- [ ] 测试覆盖率是否符合 `config/quality-thresholds.yaml`
 - [ ] 是否测试了异常场景
 
 ---
@@ -399,7 +399,7 @@ git diff master...HEAD
 - [ ] 无SQL注入、XSS等安全漏洞
 
 **代码质量验收**：
-- [ ] 单元测试覆盖率 >= {n}%
+- [ ] 单元测试覆盖率符合 `config/quality-thresholds.yaml`
 - [ ] 代码审查通过
 - [ ] 无Critical/Blocker级别的问题
 

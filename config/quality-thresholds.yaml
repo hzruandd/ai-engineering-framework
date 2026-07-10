@@ -1,0 +1,42 @@
+version: "1.0.0"
+updated_at: "2026-07-10"
+owner: "AI Coding governance"
+description: "Company default quality thresholds for AI-assisted delivery gates."
+
+coverage:
+  core_business:
+    line: 85
+    branch: 75
+    required: true
+  normal_business:
+    line: 75
+    branch: 65
+    required: true
+  utility:
+    line: 90
+    branch: 80
+    required: true
+
+quality_gate:
+  p0_open: 0
+  p1_open_default: 0
+  security_high: 0
+  db_blocker: 0
+  build_required: true
+  critical_tests_required: true
+
+result_enum:
+  - PASS
+  - FAIL
+  - WARN
+  - UNKNOWN
+  - NOT_APPLICABLE
+  - NOT_EXECUTED
+
+rules:
+  - "Coverage is a supporting signal, not a replacement for business correctness."
+  - "Meaningless assertions written only to raise coverage are prohibited."
+  - "Core branches, exception paths, idempotency, permissions, transactions, and rollback must be tested for core business changes."
+  - "UNKNOWN and NOT_EXECUTED must not be treated as PASS."
+  - "P0 and unresolved P1 risks cannot be bypassed by coverage waivers."
+  - "Any waiver must record approver, reason, expiry, and follow-up task."

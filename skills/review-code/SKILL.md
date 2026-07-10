@@ -141,7 +141,7 @@ grep -r "@Transactional" --include="*ServiceImpl.java"
 
 #### 2.5 Mapper 规范
 
-- [ ] Mapper 继承 `BaseMapper<T>`
+- [ ] Mapper 继承 `CommonMapper<T>`，事实源见 `rules/java-mapper-rule.md`
 - [ ] 不需要 `@Mapper` 注解（框架已自动扫描）
 - [ ] 使用框架提供的批量方法：`insertBatchSomeColumn`
 
@@ -248,7 +248,7 @@ grep -r "RedisUtils" --include="*.java"
 #### 6.1 单元测试
 
 - [ ] 核心业务逻辑有单元测试
-- [ ] 测试覆盖率 > 70%
+- [ ] 测试覆盖率符合 `config/quality-thresholds.yaml`
 - [ ] 测试用例包含正常、异常、边界情况
 
 #### 6.2 集成测试

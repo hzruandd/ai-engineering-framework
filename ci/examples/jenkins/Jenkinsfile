@@ -1,0 +1,19 @@
+pipeline {
+  agent any
+
+  stages {
+    stage('Validate AI Assets') {
+      steps {
+        powershell './scripts/validate-assets.ps1'
+        powershell './scripts/validate-skills.ps1'
+      }
+    }
+
+    stage('Business Build Placeholder') {
+      steps {
+        echo 'Run business repository build here, for example: mvn clean verify'
+        echo 'This documentation repository does not claim business tests are executed.'
+      }
+    }
+  }
+}

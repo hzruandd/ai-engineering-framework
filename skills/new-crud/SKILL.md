@@ -154,7 +154,7 @@ public class {ClassName} extends BusinessEntity {
 package cn.city.parking.{module}.mapper;
 
 import cn.city.parking.{module}.api.entity.{ClassName};
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import cn.city.parking.common.server.injector.CommonMapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -165,7 +165,7 @@ import java.util.List;
  * @author {作者}
  * @date {日期}
  */
-public interface {ClassName}Mapper extends BaseMapper<{ClassName}> {
+public interface {ClassName}Mapper extends CommonMapper<{ClassName}> {
 
     /**
      * 查询{功能名称}列表
@@ -186,7 +186,7 @@ public interface {ClassName}Mapper extends BaseMapper<{ClassName}> {
 ```
 
 **关键点**：
-- ✅ 继承 `BaseMapper<{ClassName}>`
+- ✅ 继承 `CommonMapper<{ClassName}>`
 - ✅ 不需要 `@Mapper` 注解（框架已自动扫描）
 - ✅ 定义自定义查询方法
 
@@ -566,7 +566,7 @@ public class {ClassName}DubboApiImpl extends BaseDubboApi implements {ClassName}
 - [ ] Entity 使用 @Schema 注解
 - [ ] Entity 使用 @TableName 指定表名
 - [ ] Entity 日期字段添加 @JsonFormat
-- [ ] Mapper 继承 BaseMapper
+- [ ] Mapper 继承 CommonMapper
 - [ ] Mapper 不需要 @Mapper 注解
 - [ ] Mapper.xml 定义 resultMap
 - [ ] Mapper.xml 定义公共查询字段

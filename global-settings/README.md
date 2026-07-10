@@ -41,10 +41,11 @@ global-settings/
 | `/add-field` | 为实体添加新字段 | 扩展已有实体 |
 | `/new-api` | 在已有模块添加新接口 | 扩展 API 功能 |
 | `/fix-cache` | 添加或修复缓存 | 性能优化 |
+| `/deliver-requirement` | 端到端需求交付入口 | 需求到发布门禁 |
 | `/review-code` | 代码审查清单 | 提测前自查 |
 | `/diff-report` | 生成代码修改报告 | 提交前总结 |
 | `/generate-tests` | 生成单元测试 | 测试覆盖 |
-| `/formal-review` | 正式代码评审报告 | 面向管理层 |
+| `/formal-review` | 正式评审摘要格式化 | 面向管理层，裁决继承 tzh-review |
 | `/design-doc` | 技术设计文档 | 方案设计 |
 | `/analyze-slow-query` | Doris 慢查询分析 | 性能诊断 |
 

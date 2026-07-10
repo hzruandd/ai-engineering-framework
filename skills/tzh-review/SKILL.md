@@ -176,9 +176,40 @@ scenarios:
 8. 执行代码评审
 9. 执行数据库与 SQL 专项
 10. 执行测试、性能、安全、部署回滚评审
-11. 输出风险分级
-12. 输出放行结论或预评审限制说明
-13. 生成正式评审报告
+11. 消费测试、自测、构建、CI、PRD、设计和 Gate 证据
+12. 输出风险分级
+13. 输出放行结论或预评审限制说明
+14. 生成正式评审报告
+
+## Phase 2 Evidence Inputs
+
+正式评审应主动查找并消费以下标准产物；找不到时必须记录为 `Unknown` 或 `NOT_EXECUTED`，不得写成已通过：
+
+- PRD：`docs/requirements/<requirement-id>/prd.md`
+- 设计：`docs/requirements/<requirement-id>/design.md`
+- 任务：`docs/deliveries/<requirement-id>/tasks.md`
+- 测试计划：`docs/deliveries/<requirement-id>/test-plan.md`
+- 自测报告：`docs/deliveries/<requirement-id>/self-test-report.md`
+- 发布门禁：`docs/deliveries/<requirement-id>/release-gate.md`
+- 质量阈值：`config/quality-thresholds.yaml`
+- Gate 模型：`gates/README.md`
+
+必须明确回答：
+
+1. 哪些测试实际执行过；
+2. 执行命令是什么；
+3. 测试结果是什么；
+4. 覆盖了哪些需求和验收标准；
+5. 哪些测试没有执行；
+6. 哪些场景仍为 `Unknown`；
+7. 是否存在阻断项；
+8. 是否具备提交人工上线签发的条件。
+
+规则：
+
+- 生成了测试代码不等于测试已执行。
+- `UNKNOWN` 和 `NOT_EXECUTED` 不得自动等同于 `PASS`。
+- 覆盖率阈值以 `config/quality-thresholds.yaml` 为准。
 
 ## Token Control Strategy
 
@@ -613,6 +644,11 @@ scenarios:
 - 安全：`checklists/security-review.md`
 - 测试：`checklists/test-review.md`
 - 部署与回滚：`checklists/deploy-rollback-review.md`
+- PRD：`checklists/prd-review.md`
+- 设计：`checklists/design-review.md`
+- BFF：`checklists/bff-review.md`
+- 前端：`checklists/frontend-review.md`
+- 测试证据：`checklists/test-evidence-review.md`
 
 ## Static Scan Policy
 

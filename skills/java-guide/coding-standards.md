@@ -240,10 +240,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 ## 4. Mapper 规范
 
 ```java
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import cn.city.parking.common.server.injector.CommonMapper;
 
 // ✅ 不需要 @Mapper 注解（common-server 已自动扫描）
-public interface UserMapper extends BaseMapper<User> {
+public interface UserMapper extends CommonMapper<User> {
     User selectByUsername(@Param("username") String username);
 }
 

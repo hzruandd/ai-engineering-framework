@@ -689,10 +689,10 @@ String orderId = IdUtil.getSnowflakeNextIdStr();
 **标准写法**（推荐）：
 
 ```java
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import cn.city.parking.common.server.injector.CommonMapper;
 
-// ✅ 继承BaseMapper即可（框架已注入批量方法）
-public interface UserMapper extends BaseMapper<User> {
+// ✅ 继承CommonMapper（框架已注入批量方法）
+public interface UserMapper extends CommonMapper<User> {
 
     // 自定义查询方法
     List<User> selectUserList(User user);
@@ -740,26 +740,24 @@ public class CustomSqlInjector extends DefaultSqlInjector {
 }
 ```
 
-**为什么不继承CommonMapper？**
+**为什么继承CommonMapper？**
 
-框架提供了`CommonMapper`接口，但**不推荐使用**：
+框架提供了`CommonMapper`接口，作为公司 Mapper 标准入口：
 
 ```java
-// ❌ 不推荐：CommonMapper已废弃
+// ✅ 推荐：继承CommonMapper
 public interface UserMapper extends CommonMapper<User> {
-    // CommonMapper继承了BaseMapper，并定义了insertBatchSomeColumn方法签名
+    // CommonMapper继承MyBatis Plus BaseMapper，并承接批量能力
 }
 
-// ✅ 推荐：继承BaseMapper
-public interface UserMapper extends BaseMapper<User> {
-    // CustomSqlInjector已自动注入insertBatchSomeColumn方法
-}
+// ❌ 不推荐：直接继承 MyBatis Plus 原生 Mapper 会绕开公司统一入口
+// 示例省略，避免复制到业务代码。
 ```
 
 **原因**：
-- `CommonMapper`只是定义了方法签名，实际实现仍来自`CustomSqlInjector`
-- 继承`BaseMapper`即可使用所有方法，无需继承`CommonMapper`
-- 保持一致性，所有Mapper统一继承`BaseMapper`
+- `CommonMapper`继承 MyBatis Plus `BaseMapper`，并作为公司批量能力的统一入口
+- 继承`CommonMapper`可以保持批量插入等框架能力一致
+- 保持一致性，所有Mapper统一继承`CommonMapper`
 
 ### 3.3 批量操作注意事项
 

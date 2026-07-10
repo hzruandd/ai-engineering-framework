@@ -24,7 +24,8 @@ description: 创建完整的CRUD功能（Entity + Mapper + Service + DubboApi）
 - 可选字段根据需要添加：revision、createBy、delFlag、updateBy
 
 ### 2. Mapper接口
-- 继承 `BaseMapper<{ClassName}>`
+- 继承 `CommonMapper<{ClassName}>`
+- 使用 `cn.city.parking.common.server.injector.CommonMapper`
 - 定义自定义查询方法：`List<{ClassName}> select{ClassName}List({ClassName} entity)`
 
 ### 3. Mapper.xml

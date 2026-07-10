@@ -1,6 +1,6 @@
 ---
 name: generate-tests
-description: 根据修改内容生成单元测试代码，支持 Service 层、Mapper 层、工具类等的测试用例生成。适用于开发完成后补充测试、提高代码覆盖率等场景。
+description: 生成或补充测试，支持 TDD 新功能模式、Bug reproduction 模式和 Legacy 补测试模式。适用于根据 PRD/设计验收标准先写失败测试，或为存量代码补充可执行测试证据。
 argument-hint: [类名] [方法名]
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
@@ -8,7 +8,15 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 # 生成单元测试代码
 
-根据修改内容自动生成单元测试代码，提高代码覆盖率。
+根据 PRD、设计文档、验收标准或修改内容生成测试。新功能默认使用 TDD 模式：先写失败测试，执行并记录失败，再实现代码，最后执行并记录通过。
+
+## 模式
+
+- `TDD`：新功能默认模式，读取验收标准，先生成并执行失败测试。
+- `bug-reproduction`：先复现缺陷，再修复。
+- `legacy`：存量代码补测试。
+
+禁止将“生成了测试代码”写成“测试已通过”。无法执行时必须标记 `NOT_EXECUTED`，并记录命令和原因。
 
 ## 使用方式
 
@@ -516,8 +524,9 @@ open target/site/jacoco/index.html
 ```
 
 **目标覆盖率**：
-- 行覆盖率 > 70%
-- 分支覆盖率 > 60%
+- 以 `config/quality-thresholds.yaml` 为唯一事实源。
+- 核心业务、普通业务、公共工具分别使用配置中的阈值。
+- 覆盖率不是唯一质量标准，核心分支、异常分支、幂等、权限、事务和回滚路径必须有测试。
 - 核心业务逻辑 > 90%
 
 ## 注意事项

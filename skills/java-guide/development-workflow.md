@@ -220,7 +220,7 @@ public interface UserDubboApi {
 package cn.city.parking.xxx.mapper;
 
 // ✅ 不需要 @Mapper 注解
-public interface UserMapper extends BaseMapper<User> {
+public interface UserMapper extends CommonMapper<User> {
     // 自定义方法
     User selectByUsername(@Param("username") String username);
 }
@@ -348,7 +348,7 @@ public class UserDubboApiImpl extends BaseDubboApi implements UserDubboApi {
 - [ ] Service 接口继承 IService<T>
 - [ ] Service 实现继承 ServiceImpl + @Transactional
 - [ ] DubboApi 继承 BaseDubboApi + ResponseResult<T> + startDubboPage()
-- [ ] Mapper 继承 BaseMapper（不需要 @Mapper 注解）
+- [ ] Mapper 继承 CommonMapper（不需要 @Mapper 注解）
 - [ ] 启动类只有 @Slf4j + @SpringBootApplication
 
 ### 功能验证

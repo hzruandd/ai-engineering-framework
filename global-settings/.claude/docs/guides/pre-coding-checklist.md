@@ -59,7 +59,7 @@
 ```
 
 **编码规范**：
-- **Mapper**：继承 `BaseMapper<T>`，使用 MyBatis-Plus
+- **Mapper**：继承 `CommonMapper<T>`，使用公司框架扩展的 MyBatis-Plus Mapper 能力
 - **Service接口**：继承 `IService<T>`
 - **Service实现**：继承 `ServiceImpl<Mapper, Entity>`，增删改加 `@Transactional`
 - **DubboApi实现**：继承 `BaseDubboApi`，返回 `ResponseResult<T>`

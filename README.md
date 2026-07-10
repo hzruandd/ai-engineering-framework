@@ -76,20 +76,21 @@ Copy-Item -Recurse -Force global-settings\.claude $env:USERPROFILE\.claude
 ### 全局配置（global-settings/）
 
 - 核心规范 CLAUDE.md（52KB，13 大模块）
-- 10 个快捷命令：`/new-crud` `/add-field` `/new-api` `/fix-cache` `/review-code` `/diff-report` `/generate-tests` `/formal-review` `/design-doc` `/analyze-slow-query`
+- 11 个快捷命令：`/deliver-requirement` `/new-crud` `/add-field` `/new-api` `/fix-cache` `/review-code` `/diff-report` `/generate-tests` `/formal-review` `/design-doc` `/analyze-slow-query`
 - 18 个参考文档（架构设计、实战案例、开发指南）
 
 详见 [global-settings/README.md](global-settings/README.md)
 
 ### 技能包（skills/）
 
-22 个 Skills，按用途分类：
+27 个 Skills，按用途分类：
 
 | 分类 | Skills |
 |------|--------|
-| 工程研发 | java-guide · new-crud · add-field · new-api · fix-cache · mcp-builder · frontend-design |
+| 工程研发 | java-guide · new-crud · add-field · new-api · fix-cache · new-bff · new-page · pre-coding-check · deliver-requirement · mcp-builder · frontend-design |
 | 质量保障 | review-code · diff-report · generate-tests · self-test · webapp-testing |
-| 文档工具 | pdf · pptx · docx · xlsx · doc-coauthoring |
+| 需求与设计 | prd-authoring · doc-coauthoring |
+| 文档工具 | pdf · pptx · docx · xlsx |
 | 设计创意 | canvas-design · algorithmic-art · theme-factory |
 | 元技能 | skill-creator · thinking-guide |
 
