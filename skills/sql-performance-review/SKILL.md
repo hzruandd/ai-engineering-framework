@@ -30,6 +30,7 @@ argument-hint: "[SQL或Mapper] [表结构/EXPLAIN/slow log 可选]"
 - 第 4 章 索引设计（列顺序、最左前缀、覆盖、冗余治理）
 - 第 5 章 SQL 硬规则（反模式清单）
 - 第 6 章 慢 SQL 与索引失效（失效场景、EXPLAIN 关注点、PolarDB/MySQL 分析链路）
+- 第 8 章 PolarDB/MySQL 专项规范（聚簇/二级索引、Buffer Pool、Redo/Undo/MVCC、大表治理、在线DDL、读写分离、HTAP）
 - 第 9 章 生产案例沉淀
 
 ## 输入要求
