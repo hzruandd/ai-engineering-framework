@@ -10,6 +10,18 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 在已有模块中添加新的接口方法，包含 DubboApi、Service、Mapper 三层代码。
 
+## 数据库规范（唯一事实源，必读）
+
+本 Skill 生成的所有 SQL 与数据访问代码**必须遵循**唯一事实源：
+`global-settings/.claude/docs/guides/database-engineering-standard.md`
+
+重点对照：
+- 第 4 章 索引设计（新接口的查询必须能说明命中哪个索引；缺失则提出新增索引建议，不得默默全表扫描）
+- 第 5 章 SQL 硬规则（禁 `SELECT *`、禁函数包裹索引列、禁深分页、写操作必带 WHERE 与隔离条件、`#{}` 预编译）
+- 第 6 章 慢 SQL 与索引失效（模糊查询/隐式转换/最左前缀等）
+
+**接口设计四要素**：查询条件、数据量评估、分页方式（避免深分页）、索引依赖。
+
 ## 使用方式
 
 ```bash
@@ -46,6 +58,10 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 7. **是否需要缓存**？
 8. **是否需要防重复提交**？
 9. **是否需要分布式锁**？
+10. **查询条件**（哪些字段参与 WHERE / JOIN / ORDER BY）
+11. **数据量评估**（目标表量级：万 / 十万 / 百万级）
+12. **分页方式**（是否分页；大数据量避免深分页，改游标或延迟关联）
+13. **索引依赖**（本查询预期命中哪个索引；若无合适索引，提出新增建议并按第 4 章设计）
 
 ### 第二步：在 DubboApi 接口中定义方法
 
@@ -299,6 +315,8 @@ User selectByPhone(@Param("phone") String phone);
 ```
 
 ### 第七步：在 Mapper.xml 中编写 SQL
+
+> **SQL 硬规则（database-engineering-standard.md 第 5 章）**：字段收敛禁止 `SELECT *`；禁止 `DATE_FORMAT/YEAR/LEFT` 等函数包裹索引列（时间条件改 `>= ? AND < ?`）；禁止 `LIMIT n, m` 深分页（改游标分页或延迟关联）；`UPDATE/DELETE` 必带精确 `WHERE`（主键/唯一键 + 租户/停车场/商户隔离）；参数一律 `#{}` 预编译，禁止 `${}` 拼接。片段模糊 `LIKE '%x%'` 需限制范围/时间窗，无法走 BTree 索引。核心 SQL 需能说明命中索引（必要时附 EXPLAIN）。
 
 **位置**：`{module}-server/src/main/resources/mapper/{ClassName}Mapper.xml`
 

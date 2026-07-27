@@ -10,6 +10,21 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 创建完整的CRUD功能模块，包含 Entity、Mapper、Service、DubboApi 四层代码，遵循框架规范。
 
+## 数据库规范（唯一事实源，必读）
+
+本 Skill 的所有数据库产出物**必须遵循**唯一事实源：
+`global-settings/.claude/docs/guides/database-engineering-standard.md`
+
+生成前后强制对照该规范的：
+- 第 1 章 设计原则（业务场景驱动：场景→访问模式→SQL→索引→表结构）
+- 第 2 章 字段设计（类型、必备字段、无依据长度禁令）
+- 第 3 章 主键双轨策略（新表 `bigint`，存量 `varchar(64)` 不动，`varchar` 主键需理由）
+- 第 4 章 索引设计（基于查询场景，联合索引列顺序，正确/错误案例）
+- 第 5 章 SQL 硬规则（禁 `SELECT *`、禁函数包裹索引列、禁深分页、写操作必带 WHERE）
+- 第 10 章 生成产出物要求 / 第 11 章 生成自检清单
+
+**正向设计顺序（禁止先建表后补索引）**：`业务场景 → 访问模式 → SQL → 索引 → 表结构`。
+
 ## 使用方式
 
 ```bash
@@ -55,6 +70,34 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
    - 是否需要乐观锁？
    - 是否需要逻辑删除？
    - 是否需要Excel导入导出？
+
+### 第一步补充：数据库设计（先于建 Entity）
+
+在生成任何代码前，先按唯一事实源完成数据库设计并输出：
+
+1. **访问模式分析**：列出该模块的主要查询（WHERE / JOIN / ORDER BY / GROUP BY / 分页），据此决定索引。
+2. **表结构 DDL**：
+   - 字段类型合规：状态 `tinyint`、金额 `decimal`、时间 `datetime`；无业务依据禁止 `varchar(255/512)`。
+   - 必备字段：`id`、`create_time`、`update_time`；字符集 `utf8mb4`。
+   - 主键：新表默认 `bigint`；若沿用存量 `varchar(64)` 或使用 `varchar` 主键，说明理由（第 3 章）。
+3. **索引方案**：基于第 1 步的查询场景设计，联合索引按"高选择性等值 → 范围 → 排序 → 覆盖"排列，单表 ≤ 5，避免重复/低选择性单列索引，并给出**每个索引的理由**（第 4 章）。
+4. **性能说明**：关键查询的命中索引与查询路径、潜在风险。
+
+DDL 模板（示例）：
+
+```sql
+CREATE TABLE `{table_name}` (
+  `id` bigint NOT NULL COMMENT '主键',
+  `field_name` varchar(100) NOT NULL COMMENT '{字段说明}',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_field_status` (`field_name`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='{功能名称}';
+```
+
+> 仅输出 DDL 文本供人工执行，**禁止连接或修改任何数据库**。
 
 ### 第二步：创建 Entity 类
 
@@ -577,6 +620,17 @@ public class {ClassName}DubboApiImpl extends BaseDubboApi implements {ClassName}
 - [ ] DubboApiImpl 继承 BaseDubboApi
 - [ ] DubboApiImpl 分页查询调用 startDubboPage()
 - [ ] 代码格式化（mvn spring-javaformat:apply）
+
+### 数据库规范自检（对照 database-engineering-standard.md 第 11 章）
+
+- [ ] 已输出表结构 DDL，字段类型合规（状态 tinyint / 金额 decimal / 时间 datetime）
+- [ ] 无业务依据的 varchar(255/512) 已消除
+- [ ] 必备字段齐全（id / create_time / update_time），字符集 utf8mb4
+- [ ] 主键符合双轨策略（新表 bigint；varchar 主键有理由；未擅改存量结构）
+- [ ] 索引基于真实查询场景设计，联合索引列顺序正确，已给出索引理由
+- [ ] 查询 SQL 无 SELECT *、无函数包裹索引列、无深分页
+- [ ] 写操作带 WHERE 与隔离条件，使用 #{} 预编译
+- [ ] 已附性能说明（命中索引 / 查询路径 / 风险）
 
 ## 可选功能
 

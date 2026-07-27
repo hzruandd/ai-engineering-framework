@@ -10,6 +10,15 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 为已有实体类添加新字段，并自动更新相关代码（Entity、Mapper.xml、缓存清理）。
 
+## 数据库规范（唯一事实源，必读）
+
+本 Skill 的字段类型、`ALTER TABLE` 与索引决策**必须遵循**唯一事实源：
+`global-settings/.claude/docs/guides/database-engineering-standard.md`
+
+重点对照：第 2 章（字段类型：状态 `tinyint`、金额 `decimal`、时间 `datetime`；无依据禁止 `varchar(255/512)`）、第 7 章（字段变更与大表 DDL）。
+
+**不破坏存量结构**：不得擅自修改主键类型或存量字段结构；类型/长度/精度变更需走影响分析→迁移→回滚→风评流程。
+
 ## 使用方式
 
 ```bash
@@ -71,6 +80,22 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
    find . -name "UserServiceImpl.java"
    ```
 
+### 第二步补充：字段变更"四问"（生成 SQL 前必须回答）
+
+在生成任何 `ALTER TABLE` 前，先按唯一事实源第 7.1 节逐条回答并输出结论：
+
+1. **该字段是否作为查询条件？**（决定是否需要索引）
+2. **是否需要索引？** 若是，按第 4 章设计（联合索引列顺序、避免低选择性单列索引），并给出索引理由与对应 SQL。
+3. **是否影响大表？** 评估目标表行数量级与 `ALTER` 锁表时长。
+4. **是否需要在线 DDL？** 大表必须采用在线变更方案，并提供大表 DDL 清单（表规模评估 / 锁表时长 / 在线方案 / 前滚脚本 / 回滚脚本 / 验证 SQL / 执行窗口与责任人）。
+
+同时确认：
+- 字段类型合规（状态 `tinyint` / 金额 `decimal` / 时间 `datetime`；长度有业务依据）。
+- 兼容性：默认可空或安全默认值，保证新旧代码兼容；是否需要历史数据回填要说明。
+- 默认值不改变核心状态/金额语义。
+
+> 仅输出 SQL 文本供人工执行，**禁止连接或修改任何数据库**。
+
 ### 第三步：生成数据库 SQL
 
 根据字段信息生成 ALTER TABLE 语句：
@@ -82,14 +107,14 @@ ADD COLUMN `field_name` {类型} {长度} {NULL/NOT NULL} COMMENT '{说明}'
 AFTER `existing_field`;
 ```
 
-**类型映射**：
-- `String` → `VARCHAR(长度)` 或 `TEXT`
+**类型映射**（遵循 database-engineering-standard.md 第 2 章）：
+- `String` → `VARCHAR(长度)`（长度须有业务依据，禁止无依据的 255/512）或大文本 `TEXT`（需与热表分离）
 - `Integer` → `INT`
 - `Long` → `BIGINT`
-- `BigDecimal` → `DECIMAL(精度,小数位)`
+- `BigDecimal` → `DECIMAL(精度,小数位)`（金额/费率必须 decimal，禁止 float/double；注释写明单位）
 - `LocalDateTime` → `DATETIME`
 - `LocalDate` → `DATE`
-- `Boolean` → `TINYINT(1)`
+- 状态 / 枚举 / 布尔 → `TINYINT`（禁止用 varchar 存状态）
 
 **示例**：
 ```sql
